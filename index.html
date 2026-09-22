@@ -112,5 +112,5 @@ document.getElementById('loginForm').addEventListener('submit',async e=>{
   if(await checkAdmin()){f.reset();status.textContent='';showAdmin('pages')}else{await supabaseClient.auth.signOut();status.textContent='This account is not an authorised YPAAT administrator.'}
 });
 document.getElementById('logoutBtn').addEventListener('click',async()=>{if(supabaseClient)await supabaseClient.auth.signOut();currentSession=null;adminVerified=false;location.hash='';showHome();toast('Signed out')});
-document.getElementById('year').textContent=new Date().getFullYear();window.addEventListener('hashchange',route);route();
+document.getElementById('year').textContent=new Date().getFullYear();window.addEventListener('hashchange',route);route();initBackend().then(()=>route());
 </script></body></html>
