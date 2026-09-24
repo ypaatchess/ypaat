@@ -115,7 +115,7 @@ function rebuild(){
  exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];
  const ex=!isAdmin?exercise():null;
  board.set({fen:game.fen(),lastMove:r.path.length?[r.path[r.path.length-1].from,r.path[r.path.length-1].to]:undefined,
-   movable:{enabled:isAdmin||!!ex,free:false,color:game.turn()==='w'?'white':'black'},
+   movable:{enabled:isAdmin||!!ex,free:true,color:game.turn()==='w'?'white':'black'},
    viewOnly:false,
    drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[]}
  });
@@ -125,7 +125,7 @@ function renderMoves(){const ch=chapter(),by=new Map((ch.moves||[]).map(m=>[m.id
 function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(currentChapter,Math.max(0,chs.length-1));const chs0=chs;$('chapters').innerHTML=chs0.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{currentChapter=Number(b.dataset.ch);currentPly=0;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter='+currentChapter);$('shareUrl').value=location.href;rebuild()})}
 function renderFields(){const ch=chapter();ch.exercises=ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{};if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
 function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
-function setupBoard(){const ch=chapter();board=Chessground($('board'),{orientation:'white',coordinates:true,viewOnly:false,drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[],onChange:shapes=>{if(!isAdmin)return;const c=chapter();c.shapesByPly=c.shapesByPly&&typeof c.shapesByPly==='object'?c.shapesByPly:{};c.shapesByPly[String(currentPly)]=shapes;}} ,movable:{enabled:isAdmin,free:false,color:'white'},events:{move:()=>{},change:()=>{}}});board.set({movable:{events:{after:(orig,dest)=>makeMove(orig,dest)}}});rebuild()}
+function setupBoard(){const ch=chapter();board=Chessground($('board'),{orientation:'white',coordinates:true,viewOnly:false,drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[],onChange:shapes=>{if(!isAdmin)return;const c=chapter();c.shapesByPly=c.shapesByPly&&typeof c.shapesByPly==='object'?c.shapesByPly:{};c.shapesByPly[String(currentPly)]=shapes;}} ,movable:{enabled:isAdmin,free:true,color:'white'},events:{move:()=>{},change:()=>{}}});board.set({movable:{events:{after:(orig,dest)=>makeMove(orig,dest)}}});rebuild()}
 function makeMove(orig,dest){
  const ch=chapter();
  const ex=!isAdmin?exercise():null;
@@ -148,7 +148,7 @@ function makeMove(orig,dest){
    }
    exerciseStep++;
    exerciseGame=g;
-   board.set({fen:g.fen(),lastMove:[orig,dest],movable:{enabled:exerciseStep<line.length,free:false,color:g.turn()==='w'?'white':'black'}});
+   board.set({fen:g.fen(),lastMove:[orig,dest],movable:{enabled:exerciseStep<line.length,free:true,color:g.turn()==='w'?'white':'black'}});
    if(exerciseStep>=line.length){
      $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
      board.set({movable:{enabled:false}});
