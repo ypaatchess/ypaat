@@ -44,7 +44,12 @@ module.exports=async function(req,res){
   let classes=await load(redis,KEY);
   if(req.method==='GET'){
     const active=splitClasses(classes);
-    return ok(res,200,{current:active.current.map(publicClass),future:active.future.map(publicClass),students:students.map(s=>({id:s.id,name:s.name,email:s.email}))});
+    return ok(res,200,{
+      current:active.current.map(publicClass),
+      future:active.future.map(publicClass),
+      classes:classes.map(publicClass),
+      students:students.map(s=>({id:s.id,name:s.name,email:s.email}))
+    });
   }
   const b=await body(req);
   const className=clean(b.className),meetingUrl=clean(b.meetingUrl),zoomUrl=clean(b.zoomUrl),dateTime=clean(b.dateTime);
