@@ -43,7 +43,7 @@ module.exports=async function(req,res){
    const studentIds=[...new Set((Array.isArray(b.studentIds)?b.studentIds:[]).map(clean).filter(Boolean))].filter(id=>students.some(s=>s.id===id));
    if(!title)return ok(res,400,{error:'Study title is required'});
    const now=new Date().toISOString();
-   const firstChapter={id:crypto.randomUUID(),title:'Chapter 1',startFen:'start',notes:'',moves:[]};
+   const firstChapter={id:crypto.randomUUID(),title:'Chapter 1',startFen:'start',notes:'',moves:[],shapesByPly:{},exercises:{}};
    const study={id:crypto.randomUUID(),title,description,visibility,studentIds,chapters:[firstChapter],createdAt:now,updatedAt:now};
    studies.push(study);await redis.set(KEY,JSON.stringify(studies));
    return ok(res,201,{study:safeStudy(study)});
