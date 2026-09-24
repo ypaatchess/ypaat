@@ -12,7 +12,7 @@ function ok(res,status,data){res.status(status).json(data)}
 async function load(redis){let pages=await redis.get(KEY);if(!Array.isArray(pages)){pages=seed.map(p=>({...p,id:crypto.randomUUID(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));await redis.set(KEY,pages)}return pages}
 async function handler(req,res){
  try{
-  const redis=getRedis();
+  const redis=await getRedis();
   if(req.query?.health==='1') return ok(res,200,{ok:true});
   if(req.method==='GET'){
     const pages=await load(redis);
