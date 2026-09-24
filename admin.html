@@ -90,6 +90,14 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 <div id="studiesTab" class="card hidden">
 <div class="top"><div><h2>Studies</h2><p class="muted">Create Lichess-style chess studies, chapters and student sharing.</p></div><button class="btn" id="newStudyBtn">+ New Study</button></div>
 <div id="studiesList"></div>
+<div style="margin-top:22px;padding-top:18px;border-top:1px solid #e7e1d6">
+<div class="top"><div><h3 style="margin:0">Exercise attempts</h3><p class="muted">Review student training-line completions and retries.</p></div><button class="btn light" id="refreshAttempts">Refresh</button></div>
+<div class="row">
+<div><label>Study</label><select id="attemptStudyFilter"><option value="">All studies</option></select></div>
+<div><label>Student</label><select id="attemptStudentFilter"><option value="">All students</option></select></div>
+</div>
+<div id="attemptsList" style="margin-top:12px"><p class="muted">Loading attempts…</p></div>
+</div>
 </div>
 <div id="pagesTab" class="card hidden">
 <div class="top"><div><h2>Articles</h2><p class="muted">Create and manage public learning pages.</p></div><button class="btn" id="newPageBtn">+ New Article</button></div>
@@ -110,7 +118,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 let students=[],homework=[],classes=[],allClasses=[],editingStudentId='',editingPageId='',editingHomeworkId='',editingClassId='';
 async function api(path,options={}){const res=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw new Error(data.error||'Request failed');return data}
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadHomework();loadClasses();loadPages()}
+function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadHomework();loadClasses();loadStudies();loadPages()}
 function showTab(tab){document.getElementById('studentsTab').classList.toggle('hidden',tab!=='students');document.getElementById('classesTab').classList.toggle('hidden',tab!=='classes');document.getElementById('homeworkTab').classList.toggle('hidden',tab!=='homework');document.getElementById('studiesTab').classList.toggle('hidden',tab!=='studies');document.getElementById('pagesTab').classList.toggle('hidden',tab!=='pages');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab!=='students')closeStudentForm();if(tab!=='classes')closeClassForm();if(tab!=='homework')closeHomeworkForm();if(tab!=='pages')closePageForm();if(tab==='studies')loadStudies()}
 async function checkLogin(){try{const d=await api('/api/auth/me');if(d.user)showDashboard()}catch{}}
 async function loadStudents(){try{const d=await api('/api/students');students=d.students||[];renderStudents()}catch(e){document.getElementById('students').textContent=e.message}}
@@ -265,13 +273,33 @@ async function loadStudies(){
   const d=await api('/api/studies');
   const byId=Object.fromEntries((d.students||[]).map(s=>[s.id,s.name]));
   document.getElementById('studiesList').innerHTML=(d.studies||[]).map(s=>'<div class="item"><div><b>'+esc(s.title)+'</b><div class="studentMeta">'+esc(s.description||'')+' · '+(s.chapters||[]).length+' chapters · '+(s.visibility==='public'?'Public':'Assigned')+'</div><div>'+(s.studentIds||[]).map(id=>'<span class="pill">'+esc(byId[id]||'Student')+'</span>').join('')+'</div></div><div class="actions"><a class="btn light" href="/study.html?id='+encodeURIComponent(s.id)+'">Open</a><button class="btn danger" onclick="deleteStudyAdmin(\''+escAttr(s.id)+'\')">Delete</button></div></div>').join('')||'<p class="muted">No studies yet.</p>';
+  const sf=document.getElementById('attemptStudyFilter');sf.innerHTML='<option value="">All studies</option>'+(d.studies||[]).map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.title)+'</option>').join('');
+  const st=document.getElementById('attemptStudentFilter');st.innerHTML='<option value="">All students</option>'+(d.students||[]).map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.name)+'</option>').join('');
+  await loadAttempts();
  }catch(e){document.getElementById('studiesList').textContent=e.message}
+}
+async function loadAttempts(){
+ try{
+  const q=new URLSearchParams();
+  const sid=document.getElementById('attemptStudyFilter').value,stid=document.getElementById('attemptStudentFilter').value;
+  if(sid)q.set('studyId',sid);if(stid)q.set('studentId',stid);
+  const d=await api('/api/study-attempts'+(q.toString()?'?'+q.toString():''));
+  const names=Object.fromEntries((d.students||[]).map(x=>[x.id,x.name]));
+  const titles=Object.fromEntries((d.studies||[]).map(x=>[x.id,x.title]));
+  document.getElementById('attemptsList').innerHTML=(d.attempts||[]).map(a=>{
+   const pct=a.lineLength?Math.round((a.completedMoves/a.lineLength)*100):100;
+   return '<div class="item"><div><b>'+esc(names[a.studentId]||'Student')+'</b><div class="studentMeta">'+esc(titles[a.studyId]||'Study')+' · '+esc(a.completedAt?new Date(a.completedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'')+'</div><div>'+esc(a.completed?'Completed':'Incomplete')+' · '+a.completedMoves+'/'+a.lineLength+' moves · '+a.wrongMoves+' wrong move'+(a.wrongMoves===1?'':'s')+' · '+pct+'%</div></div></div>'
+  }).join('')||'<p class="muted">No exercise attempts yet.</p>';
+ }catch(e){document.getElementById('attemptsList').textContent=e.message}
 }
 async function deleteStudyAdmin(id){if(!confirm('Delete this study?'))return;try{await api('/api/studies',{method:'DELETE',body:JSON.stringify({id})});await loadStudies()}catch(e){alert(e.message)}}
 async function loadPages(){try{const d=await api('/api/pages');document.getElementById('pages').innerHTML=(d.pages||[]).map(p=>'<div class="item"><div><b>'+esc(p.title)+'</b><br><small>#'+esc(p.slug)+' · '+esc(p.status)+'</small></div><div class="actions"><button class="btn light" onclick="editPage(\''+escAttr(p.id||'')+'\')">Edit</button><button class="btn danger" onclick="deletePage(\''+escAttr(p.id||'')+'\')">Delete</button></div></div>').join('')||'<p class="muted">No articles yet.</p>'}catch(e){document.getElementById('pages').textContent=e.message}}
 function openPageForm(p){const card=document.getElementById('pageFormCard'),f=document.getElementById('pageForm');card.classList.remove('hidden');f.reset();editingPageId=p?.id||'';document.getElementById('formTitle').textContent=p?'Edit Article':'Create New Article';if(p){for(const k of ['title','slug','description','content','status','nav'])f.elements[k].value=p[k]||''}document.getElementById('pageError').textContent='';window.scrollTo({top:card.offsetTop-20,behavior:'smooth'})}
 function closePageForm(){document.getElementById('pageFormCard').classList.add('hidden');editingPageId='';document.getElementById('pageForm').reset()}
 document.getElementById('newStudyBtn').addEventListener('click',()=>location.href='/study.html?new=1');
+document.getElementById('attemptStudyFilter').addEventListener('change',loadAttempts);
+document.getElementById('attemptStudentFilter').addEventListener('change',loadAttempts);
+document.getElementById('refreshAttempts').addEventListener('click',loadAttempts);
 document.getElementById('newPageBtn').addEventListener('click',()=>openPageForm());
 document.getElementById('cancelPage').addEventListener('click',closePageForm);
 async function editPage(id){try{const d=await api('/api/pages');const p=(d.pages||[]).find(x=>x.id===id);if(p)openPageForm(p)}catch(e){alert(e.message)}}
