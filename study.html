@@ -66,6 +66,7 @@ async function api(path,options={}){const res=await fetch(path,{credentials:'sam
 const params=new URLSearchParams(location.search);let studyId=params.get('id')||'',study=null,students=[],isAdmin=false,isStudent=false,currentChapter=Math.max(0,Number(params.get('chapter')||0)||0),currentPly=0,board=null,game=null,states=[];
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function chapter(){return study?.chapters?.[currentChapter]}
+function normalizeStudy(){for(const ch of (study?.chapters||[])){ch.moves=Array.isArray(ch.moves)?ch.moves:[];let parent=null;for(const m of ch.moves){m.id=m.id||crypto.randomUUID();m.parentId=m.parentId||parent;parent=m.id}ch.shapesByPly=ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{}}}
 function startGame(ch){try{return ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess()}catch{return new Chess()}}
 function nodePath(ch,targetId){const by=new Map((ch.moves||[]).map(m=>[m.id,m]));const out=[];let n=targetId?by.get(targetId):null;while(n){out.unshift(n);n=n.parentId?by.get(n.parentId):null}return out}
 function selectedMove(){const ch=chapter();return ch.moves.find(m=>m.id===window.selectedNodeId)||null}
@@ -84,14 +85,14 @@ async function load(){try{
  let d;
  if(studyId)d=await api('/api/studies?id='+encodeURIComponent(studyId));
  else {d=await api('/api/auth/me');if(!d.user){location.href='/admin.html';return}isAdmin=true;d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});studyId=d.study.id;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0')}
- study=d.study;students=d.students||[];if(!isAdmin){const am=await api('/api/auth/me').catch(()=>({user:null}));isAdmin=!!am.user;if(!isAdmin){const sm=await api('/api/auth/student-me');isStudent=!!sm.user}}
+ study=d.study;normalizeStudy();students=d.students||[];if(!isAdmin){const am=await api('/api/auth/me').catch(()=>({user:null}));isAdmin=!!am.user;if(!isAdmin){const sm=await api('/api/auth/student-me');isStudent=!!sm.user}}
  if(!isAdmin&&!isStudent){location.href='/student.html';return}
  $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href+'&chapter='+currentChapter;$('viewerNotice').classList.toggle('hidden',isAdmin);renderChapters();renderStudents();setupBoard();
  }catch(e){$('loading').textContent=e.message}}
 $('firstMove').onclick=()=>jump(0);$('prevMove').onclick=()=>jump(currentPly-1);$('nextMove').onclick=()=>jump(currentPly+1);$('lastMove').onclick=()=>jump(chapter().moves.length);
 $('saveStudy').onclick=save;
-$('newChapter').onclick=()=>{study.chapters.push({id:crypto.randomUUID(),title:'Chapter '+(study.chapters.length+1),startFen:'start',notes:'',moves:[],shapesByPly:{}});currentChapter=study.chapters.length-1;currentPly=0;renderChapters();rebuild()};
-$('deleteChapter').onclick=()=>{if(study.chapters.length<2){alert('A study must keep at least one chapter.');return}if(confirm('Delete this chapter?')){study.chapters.splice(currentChapter,1);currentChapter=Math.max(0,currentChapter-1);currentPly=0;renderChapters();rebuild()}};
+$('newChapter').onclick=()=>{study.chapters.push({id:crypto.randomUUID(),title:'Chapter '+(study.chapters.length+1),startFen:'start',notes:'',moves:[],shapesByPly:{}});currentChapter=study.chapters.length-1;window.selectedNodeId=null;currentPly=0;renderChapters();rebuild()};
+$('deleteChapter').onclick=()=>{if(study.chapters.length<2){alert('A study must keep at least one chapter.');return}if(confirm('Delete this chapter?')){study.chapters.splice(currentChapter,1);currentChapter=Math.max(0,currentChapter-1);window.selectedNodeId=null;currentPly=0;renderChapters();rebuild()}};
 $('resetChapter').onclick=()=>{chapter().moves=[];chapter().shapesByPly={};window.selectedNodeId=null;currentPly=0;rebuild()};
 $('chapterTitle').oninput=()=>{chapter().title=$('chapterTitle').value;renderChapters()};
 $('chapterNotes').oninput=()=>{$('notes').textContent=$('chapterNotes').value};
