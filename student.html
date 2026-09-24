@@ -16,12 +16,12 @@
 h1,h2,h3{font-family:'Playfair Display',serif}h1{font-size:46px;line-height:1.05;margin:10px 0 14px}h2{font-size:30px;margin:0}h3{font-size:22px;margin:0 0 7px}p{color:var(--muted);line-height:1.65}.login p{font-size:14px;margin-bottom:28px}
 form{display:grid;gap:17px}label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:7px}input{width:100%;padding:14px 15px;border:1px solid #d9d2c5;border-radius:13px;background:#fff;font:inherit;color:var(--ink);outline:none}input:focus{border-color:#a98a50;box-shadow:0 0 0 3px rgba(201,149,56,.12)}
 .btn{border:0;border-radius:999px;padding:13px 20px;background:var(--ink);color:#fff;font-weight:800;cursor:pointer;font:inherit}.login .btn{width:100%;margin-top:2px}.error{min-height:20px;color:#a33;font-size:13px;margin-top:10px}.link{color:#72582a;font-weight:800;text-decoration:none;font-size:13px}
-.dashboardHead{display:flex;justify-content:space-between;align-items:center;gap:25px;margin-bottom:30px}.welcome h1{margin:8px 0 5px;font-size:50px}.welcome p{margin:0}.signout{background:transparent;color:var(--ink);border:1px solid #cfc6b7}
+.studentNav{position:sticky;top:0;z-index:10;background:rgba(245,241,232,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);margin:0 calc(-4vw);padding:12px 4vw;display:flex;justify-content:center;gap:6px}.studentNav a,.studentNav button{border:0;background:transparent;color:var(--muted);text-decoration:none;font:700 12px 'DM Sans',sans-serif;padding:10px 14px;border-radius:999px;cursor:pointer}.studentNav a:hover,.studentNav button:hover{background:var(--soft);color:var(--ink)}.studentNav .active{background:var(--ink);color:#fff}.dashboardHead{display:flex;justify-content:space-between;align-items:center;gap:25px;margin-bottom:30px}.welcome h1{margin:8px 0 5px;font-size:50px}.welcome p{margin:0}.signout{background:transparent;color:var(--ink);border:1px solid #cfc6b7}
 .levelBand{position:relative;overflow:hidden;background:var(--green);color:#fff;border-radius:28px;padding:32px 36px;margin-bottom:24px}.levelBand:after{content:'♞';position:absolute;right:35px;top:-18px;font-family:serif;font-size:150px;line-height:1;color:rgba(255,255,255,.06)}.levelBand p{color:#cdd9d4;margin:8px 0 0}.levelPills{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.pill{display:inline-flex;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:12px;font-weight:700}
 .sectionTitle{display:flex;justify-content:space-between;align-items:end;margin:36px 0 15px}.sectionTitle span{color:var(--muted);font-size:13px}
 .modules{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.module{padding:25px;background:var(--paper);border:1px solid var(--line);border-radius:22px;min-height:170px;position:relative}.moduleIcon{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;margin-bottom:20px;font-size:18px}.module p{font-size:13px;margin:0}.coming{display:inline-block;margin-top:15px;color:#8a6b35;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
 .profile{padding:28px}.profileGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--line);margin-top:18px}.profileItem{padding:18px 10px;border-bottom:1px solid var(--line)}.profileItem:nth-child(odd){padding-left:0;padding-right:24px;border-right:1px solid var(--line)}.profileItem:nth-child(even){padding-left:24px}.profileItem:nth-last-child(-n+2){border-bottom:0}.profileLabel{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#8b7651;font-weight:800}.profileValue{margin-top:5px;font-size:15px;font-weight:600;word-break:break-word}
-@media(max-width:700px){.wrap{padding-top:30px}.login{margin:30px auto;padding:28px}.dashboardHead{align-items:flex-start;flex-direction:column}.welcome h1{font-size:40px}.modules{grid-template-columns:1fr}.profileGrid{grid-template-columns:1fr}.profileItem:nth-child(odd){padding-right:0;border-right:0}.profileItem:nth-last-child(-n+2){border-bottom:1px solid var(--line)}.profileItem:last-child{border-bottom:0}.profileItem:nth-child(even){padding-left:0}.top div{width:92%}}
+@media(max-width:700px){.wrap{padding-top:30px}.login{margin:30px auto;padding:28px}.dashboardHead{align-items:flex-start;flex-direction:column}.welcome h1{font-size:40px}.modules{grid-template-columns:1fr}.profileGrid{grid-template-columns:1fr}.profileItem:nth-child(odd){padding-right:0;border-right:0}.profileItem:nth-last-child(-n+2){border-bottom:1px solid var(--line)}.profileItem:last-child{border-bottom:0}.profileItem:nth-child(even){padding-left:0}.top div{width:92%}.studentNav{margin:0 -4vw;padding-left:4vw;padding-right:4vw;justify-content:flex-start;overflow-x:auto}.studentNav a,.studentNav button{white-space:nowrap}}
 </style>
 </head>
 <body>
@@ -35,19 +35,20 @@ form{display:grid;gap:17px}label{font-size:11px;font-weight:800;letter-spacing:.
 </section>
 
 <section id="portal" class="hidden">
-<div class="dashboardHead"><div class="welcome"><div class="eyebrow">Student Portal</div><h1 id="name">Student</h1><p>Your training dashboard at YPAAT Chess Academy.</p></div><button id="logout" class="btn signout">Sign out</button></div>
+<nav class="studentNav" aria-label="Student navigation"><a href="#overview" class="active">Overview</a><a href="#classes">Classes</a><a href="#homework">Homework</a><a href="#progress">Progress</a><a href="#profile">Profile</a><button id="navLogout">Sign out</button></nav>
+<div class="dashboardHead" id="overview"><div class="welcome"><div class="eyebrow">Student Portal</div><h1 id="name">Student</h1><p>Your training dashboard at YPAAT Chess Academy.</p></div><button id="logout" class="btn signout">Sign out</button></div>
 
 <div class="levelBand"><div class="eyebrow" style="color:#d9b96f">Your training level</div><div id="levels" class="levelPills"><span class="pill">—</span></div><p>Your assigned levels are shown here. Your classes and training plan will be connected to this profile as those modules are added.</p></div>
 
 <div class="sectionTitle"><h2>Your Training</h2><span>More features coming soon</span></div>
 <div class="modules">
-<div class="module"><div class="moduleIcon">♟</div><h3>Classes</h3><p>View your class schedule, coach information and upcoming sessions.</p><span class="coming">Coming soon</span></div>
-<div class="module"><div class="moduleIcon">♞</div><h3>Homework</h3><p>Access exercises, assignments and submit your work.</p><span class="coming">Coming soon</span></div>
-<div class="module"><div class="moduleIcon">♜</div><h3>Progress</h3><p>Follow assessments, milestones and your development over time.</p><span class="coming">Coming soon</span></div>
+<div class="module" id="classes"><div class="moduleIcon">♟</div><h3>Classes</h3><p>View your class schedule, coach information and upcoming sessions.</p><span class="coming">Coming soon</span></div>
+<div class="module" id="homework"><div class="moduleIcon">♞</div><h3>Homework</h3><p>Access exercises, assignments and submit your work.</p><span class="coming">Coming soon</span></div>
+<div class="module" id="progress"><div class="moduleIcon">♜</div><h3>Progress</h3><p>Follow assessments, milestones and your development over time.</p><span class="coming">Coming soon</span></div>
 </div>
 
 <div class="sectionTitle"><h2>Profile</h2><span>Your account information</span></div>
-<div class="card profile">
+<div class="card profile" id="profile">
 <div class="profileGrid">
 <div class="profileItem"><div class="profileLabel">Full name</div><div class="profileValue" id="profileName">—</div></div>
 <div class="profileItem"><div class="profileLabel">Email</div><div class="profileValue" id="studentEmail">—</div></div>
@@ -76,7 +77,7 @@ function showStudent(u){
 }
 async function check(){try{const d=await api('/api/auth/student-me');if(d.user)showStudent(d.user)}catch{}}
 document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();const err=document.getElementById('error');err.textContent='Signing in…';try{const d=await api('/api/auth/student-login',{method:'POST',body:JSON.stringify({email:document.getElementById('email').value,password:document.getElementById('password').value})});err.textContent='';showStudent(d.user)}catch(x){err.textContent=x.message}});
-document.getElementById('logout').addEventListener('click',async()=>{try{await api('/api/auth/student-logout',{method:'POST'})}catch{}location.reload()});check();
+async function signOut(){try{await api('/api/auth/student-logout',{method:'POST'})}catch{}location.reload()}document.getElementById('logout').addEventListener('click',signOut);document.getElementById('navLogout').addEventListener('click',signOut);document.querySelectorAll('.studentNav a').forEach(a=>a.addEventListener('click',()=>{document.querySelectorAll('.studentNav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')}));check();
 </script>
 </body>
 </html>
