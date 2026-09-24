@@ -37,6 +37,17 @@
 </div>
 </div>
 <div class="card adminOnly">
+<h3>Training exercise</h3>
+<div class="form">
+<label><input type="checkbox" id="exerciseEnabled"> Make selected position an exercise</label>
+<label>Expected move (SAN)<input id="exerciseMove" placeholder="e4"></label>
+<label>Success message<input id="exerciseSuccess" placeholder="Correct — continue the line."></label>
+<label>Retry message<input id="exerciseRetry" placeholder="Try again. Look for the best move."></label>
+</div>
+<div class="toolbar"><button class="btn gold" id="saveExercise">Set exercise</button><button class="btn light" id="clearExercise">Clear</button></div>
+<div id="exerciseStatus" class="muted"></div>
+</div>
+<div class="card adminOnly">
 <h3>Chapters</h3>
 <div class="toolbar"><button class="btn" id="newChapter">+ Chapter</button><button class="btn danger" id="deleteChapter">Delete</button></div>
 <label>Chapter title<input id="chapterTitle" style="width:100%;margin-top:6px;padding:10px;border:1px solid #d9d4ca;border-radius:10px"></label>
@@ -51,6 +62,11 @@
 <div class="card">
 <h3>Chapter notes</h3><div id="notes" class="note">—</div>
 <div id="viewerNotice" class="viewerNotice hidden">Read-only study shared by YPAAT.</div>
+<div id="exercisePanel" class="viewerNotice hidden" style="margin-top:10px">
+<div id="exercisePrompt">Training exercise</div>
+<div class="toolbar"><button class="btn gold" id="tryExercise">Attempt move</button></div>
+<div id="exerciseFeedback"></div>
+</div>
 </div>
 <div class="card adminOnly"><button class="btn danger" id="deleteStudy">Delete study</button><div id="status" style="margin-top:10px"></div></div>
 </aside>
@@ -70,11 +86,13 @@ function normalizeStudy(){for(const ch of (study?.chapters||[])){ch.moves=Array.
 function startGame(ch){try{return ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess()}catch{return new Chess()}}
 function nodePath(ch,targetId){const by=new Map((ch.moves||[]).map(m=>[m.id,m]));const out=[];let n=targetId?by.get(targetId):null;while(n){out.unshift(n);n=n.parentId?by.get(n.parentId):null}return out}
 function selectedMove(){const ch=chapter();return ch.moves.find(m=>m.id===window.selectedNodeId)||null}
+function exercise(){return chapter()?.exercises?.[window.selectedNodeId]||null}
+function renderExercise(){const ex=exercise();$('exerciseEnabled').checked=!!ex;if(ex){$('exerciseMove').value=ex.expectedSan||'';$('exerciseSuccess').value=ex.success||'Correct — continue the line.';$('exerciseRetry').value=ex.retry||'Try again.'}else{$('exerciseMove').value='';$('exerciseSuccess').value='Correct — continue the line.';$('exerciseRetry').value='Try again.'}$('exercisePanel').classList.toggle('hidden',isAdmin||!ex);if(ex)$('exercisePrompt').textContent='Exercise: find the coach move from this position.';$('exerciseFeedback').textContent=''}
 function replay(ch){const g=startGame(ch);const path=nodePath(ch,window.selectedNodeId);const arr=[];for(const m of path){try{const made=g.move({from:m.from,to:m.to,promotion:m.promotion||'q'});arr.push({fen:g.fen(),san:made.san,node:m})}catch{break}}return {g,arr,path}}
-function rebuild(){const ch=chapter();const r=replay(ch);game=r.g;currentPly=r.path.length;states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen(),...r.arr.map(x=>x.fen)];board.set({fen:game.fen(),lastMove:r.path.length?[r.path[r.path.length-1].from,r.path[r.path.length-1].to]:undefined,movable:{free:false,color:game.turn()==='w'?'white':'black'},viewOnly:!isAdmin,drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[]}});renderMoves();renderFields()}
+function rebuild(){const ch=chapter();const r=replay(ch);game=r.g;currentPly=r.path.length;states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen(),...r.arr.map(x=>x.fen)];board.set({fen:game.fen(),lastMove:r.path.length?[r.path[r.path.length-1].from,r.path[r.path.length-1].to]:undefined,movable:{free:false,color:game.turn()==='w'?'white':'black'},viewOnly:!isAdmin,drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[]}});renderMoves();renderFields();renderExercise()}
 function renderMoves(){const ch=chapter(),by=new Map((ch.moves||[]).map(m=>[m.id,m]));const children=p=>(ch.moves||[]).filter(m=>(m.parentId||null)===(p||null));let html='';function walk(parent,depth){for(const m of children(parent)){const idx=(ch.moves||[]).indexOf(m);html+='<button class="move '+(m.id===window.selectedNodeId?'active':'')+'" style="margin-left:'+Math.min(depth*14,56)+'px" data-node="'+esc(m.id)+'">'+(depth?'↳ ':'')+esc(m.san||'')+'</button>';walk(m.id,depth+1)}}walk(null,0);$('moves').innerHTML=html||'<span class="muted">No moves yet. Drag a piece on the board to begin.</span>';document.querySelectorAll('[data-node]').forEach(b=>b.onclick=()=>{window.selectedNodeId=b.dataset.node;rebuild()});const sm=selectedMove();$('moveComment').value=sm?.comment||''}
 function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(currentChapter,Math.max(0,chs.length-1));const chs0=chs;$('chapters').innerHTML=chs0.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{currentChapter=Number(b.dataset.ch);currentPly=0;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter='+currentChapter);$('shareUrl').value=location.href;rebuild()})}
-function renderFields(){const ch=chapter();if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
+function renderFields(){const ch=chapter();ch.exercises=ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{};if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
 function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
 function setupBoard(){const ch=chapter();board=Chessground($('board'),{orientation:'white',coordinates:true,viewOnly:!isAdmin,drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[],onChange:shapes=>{if(!isAdmin)return;const c=chapter();c.shapesByPly=c.shapesByPly&&typeof c.shapesByPly==='object'?c.shapesByPly:{};c.shapesByPly[String(currentPly)]=shapes;}} ,movable:{free:false,color:'white'},events:{move:()=>{},change:()=>{}}});board.set({movable:{events:{after:(orig,dest)=>makeMove(orig,dest)}}});rebuild()}
 function makeMove(orig,dest){if(!isAdmin)return rebuild();const ch=chapter();const r=replay(ch);const g=r.g;let made=null;try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}if(!made){rebuild();return}const parentId=window.selectedNodeId||null;const node={id:crypto.randomUUID(),parentId,from:orig,to:dest,promotion:'q',san:made.san,comment:''};ch.moves.push(node);window.selectedNodeId=node.id;rebuild()}
@@ -91,6 +109,9 @@ async function load(){try{
  }catch(e){$('loading').textContent=e.message}}
 $('firstMove').onclick=()=>jump(0);$('prevMove').onclick=()=>jump(currentPly-1);$('nextMove').onclick=()=>jump(currentPly+1);$('lastMove').onclick=()=>jump(chapter().moves.length);
 $('saveStudy').onclick=save;
+$('saveExercise').onclick=()=>{const id=window.selectedNodeId;if(!id){$('exerciseStatus').textContent='Select a position first.';return}const ch=chapter();ch.exercises=ch.exercises||{};ch.exercises[id]={expectedSan:$('exerciseMove').value.trim(),success:$('exerciseSuccess').value.trim(),retry:$('exerciseRetry').value.trim()};renderExercise();$('exerciseStatus').textContent='Exercise configured. Save the study to publish it.'};
+$('clearExercise').onclick=()=>{const id=window.selectedNodeId;if(id&&chapter().exercises)delete chapter().exercises[id];renderExercise();$('exerciseStatus').textContent='Exercise cleared. Save the study to publish the change.'};
+$('tryExercise').onclick=()=>{const ex=exercise();if(!ex)return;const guess=prompt('Enter your move in SAN, for example e4 or Nf3.');if(guess===null)return;const ok=guess.trim().replace(/[+#?!]+$/g,'')===ex.expectedSan.replace(/[+#?!]+$/g,'');$('exerciseFeedback').textContent=ok?ex.success:ex.retry;$('exerciseFeedback').style.marginTop='8px'};
 $('newChapter').onclick=()=>{study.chapters.push({id:crypto.randomUUID(),title:'Chapter '+(study.chapters.length+1),startFen:'start',notes:'',moves:[],shapesByPly:{}});currentChapter=study.chapters.length-1;window.selectedNodeId=null;currentPly=0;renderChapters();rebuild()};
 $('deleteChapter').onclick=()=>{if(study.chapters.length<2){alert('A study must keep at least one chapter.');return}if(confirm('Delete this chapter?')){study.chapters.splice(currentChapter,1);currentChapter=Math.max(0,currentChapter-1);window.selectedNodeId=null;currentPly=0;renderChapters();rebuild()}};
 $('resetChapter').onclick=()=>{chapter().moves=[];chapter().shapesByPly={};window.selectedNodeId=null;currentPly=0;rebuild()};
