@@ -39,8 +39,9 @@ module.exports=async function(req,res){
   const lineLength=Math.max(0,Number(b.lineLength)||0);
   const completedMoves=Math.max(0,Math.min(lineLength,Number(b.completedMoves)||lineLength));
   const wrongMoves=Math.max(0,Number(b.wrongMoves)||0);
+  const wrongEvents=Array.isArray(b.wrongEvents)?b.wrongEvents.slice(0,100).map(x=>({step:Math.max(1,Number(x.step)||1),expected:clean(x.expected),actual:clean(x.actual),at:clean(x.at)||new Date().toISOString()})):[];
   const now=new Date().toISOString();
-  const attempt={id:crypto.randomUUID(),studyId,chapterId,studentId:student.id,completedMoves,lineLength,wrongMoves,completed:completedMoves>=lineLength,completedAt:now};
+  const attempt={id:crypto.randomUUID(),studyId,chapterId,studentId:student.id,completedMoves,lineLength,wrongMoves,wrongEvents,completed:completedMoves>=lineLength,completedAt:now};
   attempts.push(attempt);
   await redis.set(KEY,JSON.stringify(attempts));
   return res.status(201).json({attempt});
