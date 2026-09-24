@@ -2,36 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Student Login | YPAAT Chess Academy</title>
+<title>Student Portal | YPAAT Chess Academy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#10202a;--muted:#66747d;--cream:#f7f4ed;--green:#173f35;--gold:#d9a441;--line:#e7e1d6}*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif}.top{background:var(--green);color:#eaf2ed;font-size:13px}.top div{width:min(1120px,92%);margin:auto;padding:8px 0}.wrap{width:min(1000px,92%);margin:55px auto}.hidden{display:none!important}.card{background:#fff;border:1px solid var(--line);border-radius:26px;padding:34px;box-shadow:0 15px 45px rgba(16,32,42,.08)}.login{max-width:520px;margin:60px auto}.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7d6a45;font-weight:800}h1,h2{font-family:'Playfair Display',serif}h1{font-size:44px;margin:10px 0}h2{font-size:34px;margin:8px 0}p{color:var(--muted)}form{display:grid;gap:15px}label{font-size:12px;font-weight:800;display:block;margin-bottom:5px}input{width:100%;padding:13px;border:1px solid #d9d4ca;border-radius:12px;font:inherit}.btn{border:0;border-radius:999px;padding:12px 18px;background:var(--ink);color:#fff;font-weight:800;cursor:pointer}.error{color:#a33;font-size:13px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:22px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.stat{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px}.stat strong{font-size:24px;display:block;margin-top:5px}.soon{border:1px dashed #cfc7b8;background:#fffdf8;border-radius:20px;padding:24px;margin-top:18px}.soon h3{margin:0 0 5px}.link{color:#72582a;font-weight:800}@media(max-width:700px){.grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
+:root{--ink:#10202a;--muted:#6b777d;--cream:#f5f1e8;--paper:#fffdf9;--green:#173f35;--gold:#c99538;--line:#e6dfd2;--soft:#eee8dc}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif}.hidden{display:none!important}
+.top{background:var(--green);color:#edf4f0;font-size:12px;letter-spacing:.02em}.top div{width:min(1180px,92%);margin:auto;padding:9px 0;display:flex;justify-content:space-between}.top a{color:#edf4f0;text-decoration:none}
+.wrap{width:min(1100px,92%);margin:0 auto;padding:52px 0 80px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:30px;box-shadow:0 22px 60px rgba(16,32,42,.08)}
+.login{max-width:480px;margin:55px auto;padding:42px}
+.brandmark{width:48px;height:48px;border-radius:15px;background:var(--green);color:#fff;display:grid;place-items:center;font-size:23px;margin-bottom:25px}.eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#876b35;font-weight:800}
+h1,h2,h3{font-family:'Playfair Display',serif}h1{font-size:46px;line-height:1.05;margin:10px 0 14px}h2{font-size:30px;margin:0}h3{font-size:22px;margin:0 0 7px}p{color:var(--muted);line-height:1.65}.login p{font-size:14px;margin-bottom:28px}
+form{display:grid;gap:17px}label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:7px}input{width:100%;padding:14px 15px;border:1px solid #d9d2c5;border-radius:13px;background:#fff;font:inherit;color:var(--ink);outline:none}input:focus{border-color:#a98a50;box-shadow:0 0 0 3px rgba(201,149,56,.12)}
+.btn{border:0;border-radius:999px;padding:13px 20px;background:var(--ink);color:#fff;font-weight:800;cursor:pointer;font:inherit}.login .btn{width:100%;margin-top:2px}.error{min-height:20px;color:#a33;font-size:13px;margin-top:10px}.link{color:#72582a;font-weight:800;text-decoration:none;font-size:13px}
+.dashboardHead{display:flex;justify-content:space-between;align-items:center;gap:25px;margin-bottom:30px}.welcome h1{margin:8px 0 5px;font-size:50px}.welcome p{margin:0}.signout{background:transparent;color:var(--ink);border:1px solid #cfc6b7}
+.levelBand{position:relative;overflow:hidden;background:var(--green);color:#fff;border-radius:28px;padding:32px 36px;margin-bottom:24px}.levelBand:after{content:'♞';position:absolute;right:35px;top:-18px;font-family:serif;font-size:150px;line-height:1;color:rgba(255,255,255,.06)}.levelBand p{color:#cdd9d4;margin:8px 0 0}.levelPills{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.pill{display:inline-flex;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:12px;font-weight:700}
+.sectionTitle{display:flex;justify-content:space-between;align-items:end;margin:36px 0 15px}.sectionTitle span{color:var(--muted);font-size:13px}
+.modules{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.module{padding:25px;background:var(--paper);border:1px solid var(--line);border-radius:22px;min-height:170px;position:relative}.moduleIcon{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;margin-bottom:20px;font-size:18px}.module p{font-size:13px;margin:0}.coming{display:inline-block;margin-top:15px;color:#8a6b35;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+.profile{padding:28px}.profileGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--line);margin-top:18px}.profileItem{padding:18px 10px;border-bottom:1px solid var(--line)}.profileItem:nth-child(odd){padding-left:0;padding-right:24px;border-right:1px solid var(--line)}.profileItem:nth-child(even){padding-left:24px}.profileItem:nth-last-child(-n+2){border-bottom:0}.profileLabel{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#8b7651;font-weight:800}.profileValue{margin-top:5px;font-size:15px;font-weight:600;word-break:break-word}
+@media(max-width:700px){.wrap{padding-top:30px}.login{margin:30px auto;padding:28px}.dashboardHead{align-items:flex-start;flex-direction:column}.welcome h1{font-size:40px}.modules{grid-template-columns:1fr}.profileGrid{grid-template-columns:1fr}.profileItem:nth-child(odd){padding-right:0;border-right:0}.profileItem:nth-last-child(-n+2){border-bottom:1px solid var(--line)}.profileItem:last-child{border-bottom:0}.profileItem:nth-child(even){padding-left:0}.top div{width:92%}}
 </style>
 </head>
 <body>
-<div class="top"><div>YPAAT Chess Academy • Student Portal</div></div>
+<div class="top"><div><span>YPAAT Chess Academy</span><a href="/">Back to website ↗</a></div></div>
 <div class="wrap">
 <section id="login" class="card login">
-<div class="eyebrow">Student Portal</div><h1>Welcome back.</h1>
-<p>Sign in with the email and password provided by YPAAT Chess Academy.</p>
-<form id="loginForm"><div><label>Email</label><input id="email" type="email" autocomplete="username" required></div><div><label>Password</label><input id="password" type="password" autocomplete="current-password" required></div><button class="btn">Sign in</button></form>
-<div id="error" class="error"></div><p><a class="link" href="/">← Back to YPAAT website</a></p>
+<div class="brandmark">♞</div><div class="eyebrow">Student Portal</div><h1>Welcome back.</h1>
+<p>Continue your chess journey with your YPAAT student account.</p>
+<form id="loginForm"><div><label>Email</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com" required></div><div><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Your password" required></div><button class="btn">Sign in</button></form>
+<div id="error" class="error"></div><a class="link" href="/">← Back to YPAAT website</a>
 </section>
+
 <section id="portal" class="hidden">
-<div class="topbar"><div><div class="eyebrow">Student Portal</div><h1 id="name">Student</h1></div><button id="logout" class="btn">Sign out</button></div>
-<div class="grid"><div class="stat"><span class="eyebrow">Email</span><strong id="studentEmail">—</strong></div><div class="stat"><span class="eyebrow">Mobile</span><strong id="mobile">—</strong></div><div class="stat"><span class="eyebrow">Level</span><strong id="levels">—</strong></div></div>
-<div class="soon"><h3>Classes</h3><p>Your class schedule and class information will appear here when the Classes module is added.</p></div>
-<div class="soon"><h3>Homework</h3><p>Homework, exercises and submissions will appear here when the Homework module is added.</p></div>
-<div class="soon"><h3>Progress</h3><p>Assessments and progress tracking will be added in a later phase.</p></div>
+<div class="dashboardHead"><div class="welcome"><div class="eyebrow">Student Portal</div><h1 id="name">Student</h1><p>Your training dashboard at YPAAT Chess Academy.</p></div><button id="logout" class="btn signout">Sign out</button></div>
+
+<div class="levelBand"><div class="eyebrow" style="color:#d9b96f">Your training level</div><div id="levels" class="levelPills"><span class="pill">—</span></div><p>Your assigned levels are shown here. Your classes and training plan will be connected to this profile as those modules are added.</p></div>
+
+<div class="sectionTitle"><h2>Your Training</h2><span>More features coming soon</span></div>
+<div class="modules">
+<div class="module"><div class="moduleIcon">♟</div><h3>Classes</h3><p>View your class schedule, coach information and upcoming sessions.</p><span class="coming">Coming soon</span></div>
+<div class="module"><div class="moduleIcon">♞</div><h3>Homework</h3><p>Access exercises, assignments and submit your work.</p><span class="coming">Coming soon</span></div>
+<div class="module"><div class="moduleIcon">♜</div><h3>Progress</h3><p>Follow assessments, milestones and your development over time.</p><span class="coming">Coming soon</span></div>
+</div>
+
+<div class="sectionTitle"><h2>Profile</h2><span>Your account information</span></div>
+<div class="card profile">
+<div class="profileGrid">
+<div class="profileItem"><div class="profileLabel">Full name</div><div class="profileValue" id="profileName">—</div></div>
+<div class="profileItem"><div class="profileLabel">Email</div><div class="profileValue" id="studentEmail">—</div></div>
+<div class="profileItem"><div class="profileLabel">Mobile</div><div class="profileValue" id="mobile">—</div></div>
+<div class="profileItem"><div class="profileLabel">WhatsApp</div><div class="profileValue" id="whatsapp">—</div></div>
+<div class="profileItem"><div class="profileLabel">Address</div><div class="profileValue" id="address">—</div></div>
+<div class="profileItem"><div class="profileLabel">Assigned levels</div><div class="profileValue" id="profileLevels">—</div></div>
+</div>
+</div>
 </section>
 </div>
 <script>
 const login=document.getElementById('login'),portal=document.getElementById('portal');
 async function api(path,options={}){const r=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.error||'Request failed');return d}
-function showStudent(u){login.classList.add('hidden');portal.classList.remove('hidden');document.getElementById('name').textContent=u.name||'Student';document.getElementById('studentEmail').textContent=u.email||'—';document.getElementById('mobile').textContent=u.mobile||'—';document.getElementById('levels').textContent=(u.levels||[]).join(', ')||'—'}
+function showStudent(u){
+  login.classList.add('hidden');portal.classList.remove('hidden');
+  document.getElementById('name').textContent=u.name||'Student';
+  document.getElementById('profileName').textContent=u.name||'—';
+  document.getElementById('studentEmail').textContent=u.email||'—';
+  document.getElementById('mobile').textContent=u.mobile||'—';
+  document.getElementById('whatsapp').textContent=u.whatsapp||'—';
+  document.getElementById('address').textContent=u.address||'—';
+  const levels=u.levels||[];
+  document.getElementById('levels').innerHTML=levels.length?levels.map(x=>'<span class="pill">'+x.replace(/[&<>]/g,'')+'</span>').join(''):'<span class="pill">Not assigned</span>';
+  document.getElementById('profileLevels').textContent=levels.join(', ')||'—';
+}
 async function check(){try{const d=await api('/api/auth/student-me');if(d.user)showStudent(d.user)}catch{}}
-document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();const err=document.getElementById('error');err.textContent='Signing in…';try{const d=await api('/api/auth/student-login',{method:'POST',body:JSON.stringify({email:document.getElementById('email').value,password:document.getElementById('password').value})});showStudent(d.user)}catch(x){err.textContent=x.message}});
+document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();const err=document.getElementById('error');err.textContent='Signing in…';try{const d=await api('/api/auth/student-login',{method:'POST',body:JSON.stringify({email:document.getElementById('email').value,password:document.getElementById('password').value})});err.textContent='';showStudent(d.user)}catch(x){err.textContent=x.message}});
 document.getElementById('logout').addEventListener('click',async()=>{try{await api('/api/auth/student-logout',{method:'POST'})}catch{}location.reload()});check();
 </script>
 </body>
