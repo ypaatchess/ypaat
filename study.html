@@ -95,7 +95,20 @@ function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(c
 function renderFields(){const ch=chapter();ch.exercises=ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{};if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
 function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
 function setupBoard(){const ch=chapter();board=Chessground($('board'),{orientation:'white',coordinates:true,viewOnly:!isAdmin,drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[],onChange:shapes=>{if(!isAdmin)return;const c=chapter();c.shapesByPly=c.shapesByPly&&typeof c.shapesByPly==='object'?c.shapesByPly:{};c.shapesByPly[String(currentPly)]=shapes;}} ,movable:{free:false,color:'white'},events:{move:()=>{},change:()=>{}}});board.set({movable:{events:{after:(orig,dest)=>makeMove(orig,dest)}}});rebuild()}
-function makeMove(orig,dest){if(!isAdmin)return rebuild();const ch=chapter();const r=replay(ch);const g=r.g;let made=null;try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}if(!made){rebuild();return}const parentId=window.selectedNodeId||null;const node={id:crypto.randomUUID(),parentId,from:orig,to:dest,promotion:'q',san:made.san,comment:''};ch.moves.push(node);window.selectedNodeId=node.id;rebuild()}
+function makeMove(orig,dest){
+ const ch=chapter();const r=replay(ch);const g=r.g;let made=null;
+ try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}
+ if(!made){rebuild();return}
+ const ex=!isAdmin?exercise():null;
+ if(ex){
+   const expected=(ex.expectedSan||'').replace(/[+#?!]+$/g,'').trim();
+   const actual=(made.san||'').replace(/[+#?!]+$/g,'').trim();
+   if(actual!==expected){$('exerciseFeedback').textContent=ex.retry||'Try again.';setTimeout(()=>rebuild(),350);return}
+   $('exerciseFeedback').textContent=ex.success||'Correct — continue the line.';
+ }
+ if(!isAdmin){board.set({movable:{enabled:false}});return}
+ const parentId=window.selectedNodeId||null;const node={id:crypto.randomUUID(),parentId,from:orig,to:dest,promotion:'q',san:made.san,comment:''};
+ ch.moves.push(node);window.selectedNodeId=node.id;rebuild()}
 function jump(p){const ch=chapter();const path=nodePath(ch,window.selectedNodeId);const target=Math.max(0,Math.min(path.length,p));window.selectedNodeId=target?path[target-1].id:null;rebuild()}
 async function save(){if(!isAdmin)return;study.title=$('editTitle').value.trim();study.description=$('editDescription').value.trim();study.visibility=$('visibility').value;study.studentIds=[...document.querySelectorAll('#studentChecks input:checked')].map(x=>x.value);const ch=chapter();ch.title=$('chapterTitle').value.trim()||'Untitled chapter';ch.startFen=$('chapterFen').value.trim()||'start';ch.notes=$('chapterNotes').value;const d=await api('/api/studies',{method:'PUT',body:JSON.stringify(study)});study=d.study;renderChapters();renderStudents();renderFields();setStatus('Study saved','success')}
 function setStatus(t,c=''){ $('status').textContent=t;$('status').className=c}
