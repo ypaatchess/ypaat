@@ -22,7 +22,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 
 <section id="dashboard" class="hidden">
 <div class="top"><div><div class="eyebrow">YPAAT Management</div><h1>Dashboard</h1></div><button id="logout" class="btn">Sign out</button></div>
-<div class="tabs"><button class="btn active" data-tab="students">Students</button><button class="btn" data-tab="homework">Homework</button><button class="btn" data-tab="pages">Articles</button></div>
+<div class="tabs"><button class="btn active" data-tab="students">Students</button><button class="btn" data-tab="classes">Classes</button><button class="btn" data-tab="homework">Homework</button><button class="btn" data-tab="pages">Articles</button></div>
 
 <div id="studentsTab" class="card">
 <div class="top"><div><h2>Students</h2><p class="muted">Create student accounts and assign one or more training levels.</p></div><button class="btn" id="newStudentBtn">+ New Student</button></div>
@@ -46,6 +46,22 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </form><div id="studentError" class="error"></div>
 </div>
 
+<div id="classesTab" class="card hidden">
+<div class="top"><div><h2>Class Schedule</h2><p class="muted">Only future and current classes are shown here. A class remains current for one hour after its start time.</p></div><button class="btn" id="newClassBtn">+ New Class</button></div>
+<div class="sectionTitle" style="margin:18px 0 8px"><h3>Current</h3></div><div id="currentClasses"></div>
+<div class="sectionTitle" style="margin:26px 0 8px"><h3>Upcoming</h3></div><div id="futureClasses"></div>
+</div>
+<div id="classFormCard" class="card hidden" style="margin-top:18px">
+<div class="top"><div><h2 id="classFormTitle">Create Class</h2><p class="muted">Date and time are interpreted as India Standard Time (IST).</p></div><button class="btn light" id="cancelClass">Cancel</button></div>
+<form id="classForm">
+<div><label>Class name</label><input name="className" placeholder="e.g. Intermediate Tactical Training" required></div>
+<div><label>Meeting URL</label><input name="meetingUrl" type="url" placeholder="https://..." required></div>
+<div><label>Zoom meeting link</label><input name="zoomUrl" type="url" placeholder="https://zoom.us/..." required></div>
+<div><label>Date and time</label><input name="dateTime" type="datetime-local" required></div>
+<div><label>Assign to students <span class="muted">(select one or more)</span></label><div id="classStudents" class="multi"></div></div>
+<button class="btn" type="submit">Save Class</button>
+</form><div id="classError" class="error"></div>
+</div>
 <div id="homeworkTab" class="card hidden">
 <div class="top"><div><h2>Homework</h2><p class="muted">Create chess homework and assign it to one or more students.</p></div><button class="btn" id="newHomeworkBtn">+ New Homework</button></div>
 <div id="homeworkList"></div>
@@ -75,11 +91,11 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </section>
 </div>
 <script>
-let students=[],homework=[],editingStudentId='',editingPageId='',editingHomeworkId='';
+let students=[],homework=[],classes=[],editingStudentId='',editingPageId='',editingHomeworkId='',editingClassId='';
 async function api(path,options={}){const res=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw new Error(data.error||'Request failed');return data}
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadHomework();loadPages()}
-function showTab(tab){document.getElementById('studentsTab').classList.toggle('hidden',tab!=='students');document.getElementById('homeworkTab').classList.toggle('hidden',tab!=='homework');document.getElementById('pagesTab').classList.toggle('hidden',tab!=='pages');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab!=='students')closeStudentForm();if(tab!=='homework')closeHomeworkForm();if(tab!=='pages')closePageForm()}
+function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadHomework();loadClasses();loadPages()}
+function showTab(tab){document.getElementById('studentsTab').classList.toggle('hidden',tab!=='students');document.getElementById('classesTab').classList.toggle('hidden',tab!=='classes');document.getElementById('homeworkTab').classList.toggle('hidden',tab!=='homework');document.getElementById('pagesTab').classList.toggle('hidden',tab!=='pages');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab!=='students')closeStudentForm();if(tab!=='classes')closeClassForm();if(tab!=='homework')closeHomeworkForm();if(tab!=='pages')closePageForm()}
 async function checkLogin(){try{const d=await api('/api/auth/me');if(d.user)showDashboard()}catch{}}
 async function loadStudents(){try{const d=await api('/api/students');students=d.students||[];renderStudents()}catch(e){document.getElementById('students').textContent=e.message}}
 function renderStudents(){
@@ -106,6 +122,26 @@ document.getElementById('studentForm').addEventListener('submit',async e=>{
  e.preventDefault();const f=e.currentTarget;const levels=[...f.querySelectorAll('input[name=levels]:checked')].map(x=>x.value);const data=Object.fromEntries(new FormData(f).entries());data.levels=levels;
  try{await api('/api/students',{method:editingStudentId?'PUT':'POST',body:JSON.stringify({...data,id:editingStudentId||undefined})});closeStudentForm();await loadStudents()}catch(x){document.getElementById('studentError').textContent=x.message}
 });
+function formatClassDate(value){const d=new Date(value);return d.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Kolkata'})}
+function renderClassItem(c){
+ const names=(c.studentIds||[]).map(id=>students.find(s=>s.id===id)?.name||'Unknown student').join(', ');
+ const when=new Date(c.dateTime), current=when.getTime()<=Date.now()&&Date.now()<when.getTime()+3600000;
+ return '<div class="item"><div><b>'+esc(c.className)+'</b><div class="studentMeta">'+esc(formatClassDate(c.dateTime))+' · '+esc(names)+'</div><div><a href="'+escAttr(c.zoomUrl)+'" target="_blank" rel="noopener">Zoom ↗</a> · <a href="'+escAttr(c.meetingUrl)+'" target="_blank" rel="noopener">Meeting ↗</a></div></div><div class="actions"><span class="pill">'+(current?'Current':'Upcoming')+'</span><button class="btn light" onclick="editClass(\''+escAttr(c.id)+'\')">Edit</button><button class="btn danger" onclick="deleteClass(\''+escAttr(c.id)+'\')">Delete</button></div></div>';
+}
+async function loadClasses(){
+ try{const d=await api('/api/classes');classes=[...(d.current||[]),...(d.future||[])];students=d.students||students;document.getElementById('currentClasses').innerHTML=(d.current||[]).map(renderClassItem).join('')||'<p class="muted">No current classes.</p>';document.getElementById('futureClasses').innerHTML=(d.future||[]).map(renderClassItem).join('')||'<p class="muted">No upcoming classes.</p>';renderClassStudents()}
+ catch(e){document.getElementById('currentClasses').textContent=e.message}
+}
+function renderClassStudents(selected=[]){document.getElementById('classStudents').innerHTML=students.map(s=>'<label class="level"><input type="checkbox" name="studentIds" value="'+escAttr(s.id)+'" '+(selected.includes(s.id)?'checked':'')+'><span>'+esc(s.name)+'</span></label>').join('')||'<p class="muted">Create students first.</p>'}
+function toDateTimeLocal(value){const d=new Date(value);const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);const o=Object.fromEntries(parts.map(x=>[x.type,x.value]));return o.year+'-'+o.month+'-'+o.day+'T'+o.hour+':'+o.minute}
+function openClassForm(item){const card=document.getElementById('classFormCard'),f=document.getElementById('classForm');card.classList.remove('hidden');f.reset();editingClassId=item?.id||'';document.getElementById('classFormTitle').textContent=item?'Edit Class':'Create Class';if(item){f.elements.className.value=item.className||'';f.elements.meetingUrl.value=item.meetingUrl||'';f.elements.zoomUrl.value=item.zoomUrl||'';f.elements.dateTime.value=toDateTimeLocal(item.dateTime)}renderClassStudents(item?.studentIds||[]);document.getElementById('classError').textContent='';window.scrollTo({top:card.offsetTop-20,behavior:'smooth'})}
+function closeClassForm(){document.getElementById('classFormCard').classList.add('hidden');editingClassId='';document.getElementById('classForm').reset()}
+function editClass(id){const x=classes.find(c=>c.id===id);if(x)openClassForm(x)}
+async function deleteClass(id){const x=classes.find(c=>c.id===id);if(!x||!confirm('Delete '+x.className+'?'))return;try{await api('/api/classes',{method:'DELETE',body:JSON.stringify({id})});await loadClasses()}catch(e){alert(e.message)}}
+document.getElementById('newClassBtn').addEventListener('click',()=>openClassForm());
+document.getElementById('cancelClass').addEventListener('click',closeClassForm);
+document.getElementById('classForm').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget;const studentIds=[...f.querySelectorAll('input[name=studentIds]:checked')].map(x=>x.value);const data={className:f.elements.className.value,meetingUrl:f.elements.meetingUrl.value,zoomUrl:f.elements.zoomUrl.value,dateTime:f.elements.dateTime.value,studentIds};try{await api('/api/classes',{method:editingClassId?'PUT':'POST',body:JSON.stringify({...data,id:editingClassId||undefined})});closeClassForm();await loadClasses()}catch(x){document.getElementById('classError').textContent=x.message)}});
+
 async function loadHomework(){
  try{const d=await api('/api/homework');homework=d.homework||[];students=d.students||students;renderHomework();renderHomeworkStudents()}
  catch(e){document.getElementById('homeworkList').textContent=e.message}
