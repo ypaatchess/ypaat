@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Articles | YPAAT Chess Academy</title>
+<meta name="description" content="Chess articles, curriculum notes and training resources from YPAAT Chess Academy.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#10202a;--muted:#66747d;--cream:#f7f4ed;--paper:#fff;--gold:#d9a441;--green:#173f35;--line:#e7e1d6;--shadow:0 20px 60px rgba(16,32,42,.09)}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;line-height:1.65}a{text-decoration:none;color:inherit}.container{width:min(1120px,92%);margin:auto}.top{background:var(--green);color:#eaf2ed;font-size:13px}.top .container{display:flex;justify-content:space-between;padding:8px 0}.nav{background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}.navin{height:76px;display:flex;align-items:center;justify-content:space-between}.brand{font-family:'Playfair Display',serif;font-size:25px;letter-spacing:.08em;font-weight:700}.brand small{display:block;font:700 8px 'DM Sans';letter-spacing:.18em;color:#6f6a5e}.links{display:flex;gap:26px;font-size:14px;font-weight:700;color:#44525b}.btn{display:inline-flex;padding:11px 18px;border-radius:999px;background:var(--ink);color:#fff;font-weight:700}.hero{padding:78px 0 58px;background:radial-gradient(circle at 80% 10%,rgba(217,164,65,.2),transparent 30%),linear-gradient(135deg,#fffdf8,#f5efe3)}.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7d6a45;font-weight:800}.hero h1{font:700 clamp(46px,6vw,72px)/1.05 'Playfair Display',serif;margin:12px 0}.hero p{max-width:680px;color:var(--muted);font-size:18px;margin:0}.posts{padding:68px 0 100px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.post{background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px;box-shadow:0 8px 30px rgba(16,32,42,.04);display:flex;flex-direction:column;min-height:270px;transition:.2s}.post:hover{transform:translateY(-3px);box-shadow:var(--shadow)}.tag{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#7a6a4e;font-weight:800}.post h2{font:700 29px/1.15 'Playfair Display',serif;margin:12px 0}.post p{color:var(--muted);margin:0 0 22px}.read{margin-top:auto;color:#7a5a20;font-weight:800;font-size:14px}.empty{background:#fff;border:1px solid var(--line);border-radius:24px;padding:42px;text-align:center;color:var(--muted)}.footer{background:#0c1a21;color:#d6dfdb;padding:42px 0}.footer small{color:#8ea09a}@media(max-width:800px){.links{display:none}.grid{grid-template-columns:1fr 1fr}}@media(max-width:540px){.grid{grid-template-columns:1fr}.top .container{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="top"><div class="container"><span>Structured Chess Training • Hyderabad</span><span>WhatsApp +91 81436 84808</span></div></div>
+<header class="nav"><div class="container navin"><a class="brand" href="/">YPAAT<small>CHESS ACADEMY</small></a><nav class="links"><a href="/">Home</a><a href="/#courses">Courses</a><a href="/#approach">Approach</a><a href="/#about">About</a><a href="/#contact">Contact</a><a href="/articles.html">Articles</a></nav><a class="btn" href="https://wa.me/918143684808" target="_blank">Start Training</a></div></header>
+<section class="hero"><div class="container"><div class="eyebrow">YPAAT Learning Journal</div><h1>Articles & Chess Resources</h1><p>Training notes, curriculum guides, opening ideas and practical chess resources published by YPAAT Chess Academy.</p></div></section>
+<main class="posts"><div class="container"><div id="posts" class="grid"></div></div></main>
+<footer class="footer"><div class="container"><b>♞ YPAAT Chess Academy</b><br><small>Your Personal Assessment And Training · Think Better. Play Stronger.</small></div></footer>
+<script>
+function esc(s){return String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+async function load(){
+ const el=document.getElementById('posts');
+ try{
+  const res=await fetch('/api/pages?public=1',{cache:'no-store'}); const data=await res.json();
+  if(!res.ok) throw new Error(data.error||'Unable to load articles');
+  const pages=(data.pages||[]).filter(p=>p.status==='published');
+  el.innerHTML=pages.map(p=>'<a class="post" href="/article.html?slug='+encodeURIComponent(p.slug)+'"><span class="tag">Chess Article</span><h2>'+esc(p.title)+'</h2><p>'+esc(p.description||'Read this YPAAT chess training resource.')+'</p><span class="read">Read article →</span></a>').join('');
+  if(!pages.length) el.innerHTML='<div class="empty" style="grid-column:1/-1">No published articles yet.</div>';
+ }catch(e){el.innerHTML='<div class="empty" style="grid-column:1/-1">'+esc(e.message)+'</div>'}
+}
+load();
+</script>
+</body>
+</html>
