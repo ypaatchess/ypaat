@@ -140,7 +140,25 @@ function editClass(id){const x=classes.find(c=>c.id===id);if(x)openClassForm(x)}
 async function deleteClass(id){const x=classes.find(c=>c.id===id);if(!x||!confirm('Delete '+x.className+'?'))return;try{await api('/api/classes',{method:'DELETE',body:JSON.stringify({id})});await loadClasses()}catch(e){alert(e.message)}}
 document.getElementById('newClassBtn').addEventListener('click',()=>openClassForm());
 document.getElementById('cancelClass').addEventListener('click',closeClassForm);
-document.getElementById('classForm').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget;const studentIds=[...f.querySelectorAll('input[name=studentIds]:checked')].map(x=>x.value);const data={className:f.elements.className.value,meetingUrl:f.elements.meetingUrl.value,zoomUrl:f.elements.zoomUrl.value,dateTime:f.elements.dateTime.value,studentIds};try{await api('/api/classes',{method:editingClassId?'PUT':'POST',body:JSON.stringify({...data,id:editingClassId||undefined})});closeClassForm();await loadClasses()}catch(x){document.getElementById('classError').textContent=x.message)}});
+document.getElementById('classForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const f=e.currentTarget;
+ const studentIds=[...f.querySelectorAll('input[name=studentIds]:checked')].map(x=>x.value);
+ const data={
+  className:f.elements.className.value,
+  meetingUrl:f.elements.meetingUrl.value,
+  zoomUrl:f.elements.zoomUrl.value,
+  dateTime:f.elements.dateTime.value,
+  studentIds
+ };
+ try{
+  await api('/api/classes',{method:editingClassId?'PUT':'POST',body:JSON.stringify({...data,id:editingClassId||undefined})});
+  closeClassForm();
+  await loadClasses();
+ }catch(x){
+  document.getElementById('classError').textContent=x.message;
+ }
+});
 
 async function loadHomework(){
  try{const d=await api('/api/homework');homework=d.homework||[];students=d.students||students;renderHomework();renderHomeworkStudents()}
