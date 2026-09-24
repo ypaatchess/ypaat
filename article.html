@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Article | YPAAT Chess Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#10202a;--muted:#66747d;--cream:#f7f4ed;--paper:#fff;--gold:#d9a441;--green:#173f35;--line:#e7e1d6}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;line-height:1.75}.container{width:min(900px,92%);margin:auto}a{color:inherit;text-decoration:none}.top{background:var(--green);color:#eaf2ed;font-size:13px}.top .container{display:flex;justify-content:space-between;padding:8px 0}.nav{background:#fff;border-bottom:1px solid var(--line)}.navin{height:76px;display:flex;align-items:center;justify-content:space-between}.brand{font:700 25px 'Playfair Display',serif;letter-spacing:.08em}.brand small{display:block;font:700 8px 'DM Sans';letter-spacing:.18em;color:#6f6a5e}.back{font-weight:800;color:#72582a}.article{padding:64px 0 100px}.paper{background:#fff;border:1px solid var(--line);border-radius:28px;padding:clamp(28px,6vw,64px);box-shadow:0 20px 60px rgba(16,32,42,.08)}.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7d6a45;font-weight:800}.title{font:700 clamp(42px,6vw,68px)/1.08 'Playfair Display',serif;margin:14px 0 16px}.description{font-size:19px;color:var(--muted);margin:0 0 38px}.prose{font-size:17px;color:#263740}.prose h1{font:700 40px/1.15 'Playfair Display',serif;margin:0 0 22px}.prose h2{font:700 30px/1.2 'Playfair Display',serif;margin:42px 0 14px}.prose h3{font-size:21px}.prose p{margin:0 0 20px}.prose li{margin:8px 0}.prose blockquote{border-left:4px solid var(--gold);margin:28px 0;padding:8px 22px;background:#faf7f0}.error{text-align:center;color:#a33}.footer{background:#0c1a21;color:#d6dfdb;padding:42px 0}.footer small{color:#8ea09a}
+</style>
+</head>
+<body>
+<div class="top"><div class="container"><span>Structured Chess Training • Hyderabad</span><span>WhatsApp +91 81436 84808</span></div></div>
+<header class="nav"><div class="container navin"><a class="brand" href="/">YPAAT<small>CHESS ACADEMY</small></a><a class="back" href="/articles.html">← All Articles</a></div></header>
+<main class="article"><div class="container"><article class="paper"><div id="article"></div></article></div></main>
+<footer class="footer"><div class="container"><b>♞ YPAAT Chess Academy</b><br><small>Your Personal Assessment And Training · Think Better. Play Stronger.</small></div></footer>
+<script>
+function esc(s){return String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+async function load(){
+ const root=document.getElementById('article'); const slug=new URLSearchParams(location.search).get('slug');
+ if(!slug){root.innerHTML='<div class="error">Article not found.</div>';return}
+ try{
+  const res=await fetch('/api/pages?slug='+encodeURIComponent(slug),{cache:'no-store'});const data=await res.json();
+  if(!res.ok||!data.page)throw new Error('Article not found');
+  const p=data.page; document.title=p.title+' | YPAAT Chess Academy';
+  root.innerHTML='<div class="eyebrow">YPAAT Chess Article</div><h1 class="title">'+esc(p.title)+'</h1><p class="description">'+esc(p.description||'')+'</p><div class="prose">'+p.content+'</div>';
+ }catch(e){root.innerHTML='<div class="error">'+esc(e.message)+'</div>'}
+}
+load();
+</script>
+</body>
+</html>
