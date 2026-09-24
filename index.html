@@ -60,5 +60,22 @@ document.getElementById('pageForm').addEventListener('submit',async e=>{
 });
 document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget,status=document.getElementById('loginStatus');status.style.color='#a33';status.textContent='Signing in…';try{const data=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:f.email.value,password:f.password.value})});currentUser=data.user;status.textContent='';f.reset();await showAdmin('pages')}catch(e){status.textContent=e.message}});
 document.getElementById('logoutBtn').addEventListener('click',async()=>{try{await api('/api/auth/logout',{method:'POST'})}catch{}currentUser=null;remotePages=null;location.hash='';showHome();toast('Signed out')});
-document.getElementById('year').textContent=new Date().getFullYear();window.addEventListener('hashchange',route);route();initBackend().then(()=>route());
+document.getElementById('year').textContent=new Date().getFullYear();
+
+async function bootstrapYpaat(){
+  // Wait for the API check before routing. This prevents #admin from being
+  // handled while the page is still deciding whether the backend is available.
+  await initBackend();
+  await route();
+}
+
+window.addEventListener('hashchange',()=>{ route(); });
+document.querySelectorAll('a[href="#admin"]').forEach(link=>{
+  link.addEventListener('click',()=>{
+    // Let the browser update the hash, then route explicitly.
+    setTimeout(()=>route(),0);
+  });
+});
+
+bootstrapYpaat();
 </script></body></html>
