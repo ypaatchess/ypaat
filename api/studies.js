@@ -61,7 +61,7 @@ module.exports=async function(req,res){
      title:clean(ch.title)||'Untitled chapter',
      startFen:clean(ch.startFen)||'start',
      notes:String(ch.notes??''),
-     moves:Array.isArray(ch.moves)?ch.moves.map(m=>({from:clean(m.from),to:clean(m.to),promotion:clean(m.promotion)||undefined,san:clean(m.san),comment:String(m.comment??'')})):[],
+     moves:Array.isArray(ch.moves)?ch.moves.map(m=>({from:clean(m.from),to:clean(m.to),promotion:clean(m.promotion)||undefined,san:clean(m.san),comment:String(m.comment??''),parentId:clean(m.parentId)||null,id:clean(m.id)||crypto.randomUUID()})):[],
      pgn:String(ch.pgn??''),
      shapesByPly:ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{}
    })):studies[i].chapters;
