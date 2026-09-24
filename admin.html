@@ -288,7 +288,8 @@ async function loadAttempts(){
   const titles=Object.fromEntries((d.studies||[]).map(x=>[x.id,x.title]));
   document.getElementById('attemptsList').innerHTML=(d.attempts||[]).map(a=>{
    const pct=a.lineLength?Math.round((a.completedMoves/a.lineLength)*100):100;
-   return '<div class="item"><div><b>'+esc(names[a.studentId]||'Student')+'</b><div class="studentMeta">'+esc(titles[a.studyId]||'Study')+' · '+esc(a.completedAt?new Date(a.completedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'')+'</div><div>'+esc(a.completed?'Completed':'Incomplete')+' · '+a.completedMoves+'/'+a.lineLength+' moves · '+a.wrongMoves+' wrong move'+(a.wrongMoves===1?'':'s')+' · '+pct+'%</div></div></div>'
+   const mistakes=(a.wrongEvents||[]).map((w,i)=>'<div style="margin-top:5px"><b>Move '+esc(w.step)+':</b> expected <code>'+esc(w.expected)+'</code>, played <code>'+esc(w.actual)+'</code></div>').join('');
+   return '<details class="item"><summary style="cursor:pointer"><b>'+esc(names[a.studentId]||'Student')+'</b> · '+esc(titles[a.studyId]||'Study')+' · '+esc(a.completedAt?new Date(a.completedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'')+' · '+esc(a.completed?'Completed':'Incomplete')+' · '+a.completedMoves+'/'+a.lineLength+' moves · '+a.wrongMoves+' wrong · '+pct+'%</summary><div style="margin-top:10px">'+(mistakes||'<span class="muted">No incorrect moves recorded.</span>')+'</div></details>'
   }).join('')||'<p class="muted">No exercise attempts yet.</p>';
  }catch(e){document.getElementById('attemptsList').textContent=e.message}
 }
