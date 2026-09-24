@@ -47,9 +47,21 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </div>
 
 <div id="classesTab" class="card hidden">
-<div class="top"><div><h2>Class Schedule</h2><p class="muted">Only future and current classes are shown here. A class remains current for one hour after its start time.</p></div><button class="btn" id="newClassBtn">+ New Class</button></div>
+<div class="top"><div><h2>Class Schedule</h2><p class="muted">Filter classes by student and date. Default view shows current and upcoming classes.</p></div><button class="btn" id="newClassBtn">+ New Class</button></div>
+<div class="card" style="padding:16px;margin:14px 0 18px;background:#faf9f5">
+<div class="row">
+<div><label>Student</label><select id="classStudentFilter"><option value="">All students</option></select></div>
+<div><label>Date range</label><select id="classDatePreset"><option value="active">Current & upcoming</option><option value="today">Today</option><option value="current-month">Current month</option><option value="next-month">Next month</option><option value="all">All dates</option><option value="custom">Custom range</option></select></div>
+</div>
+<div id="classCustomDates" class="row hidden" style="margin-top:12px">
+<div><label>From date</label><input id="classFromDate" type="date"></div>
+<div><label>To date</label><input id="classToDate" type="date"></div>
+</div>
+<div class="actions" style="margin-top:12px"><button class="btn light" id="clearClassFilters" type="button">Clear filters</button><span id="classFilterSummary" class="muted" style="padding:10px 0"></span></div>
+</div>
 <div class="sectionTitle" style="margin:18px 0 8px"><h3>Current</h3></div><div id="currentClasses"></div>
 <div class="sectionTitle" style="margin:26px 0 8px"><h3>Upcoming</h3></div><div id="futureClasses"></div>
+<div class="sectionTitle" style="margin:26px 0 8px"><h3>Past</h3></div><div id="pastClasses"></div>
 </div>
 <div id="classFormCard" class="card hidden" style="margin-top:18px">
 <div class="top"><div><h2 id="classFormTitle">Create Class</h2><p class="muted">Date and time are interpreted as India Standard Time (IST).</p></div><button class="btn light" id="cancelClass">Cancel</button></div>
@@ -91,7 +103,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </section>
 </div>
 <script>
-let students=[],homework=[],classes=[],editingStudentId='',editingPageId='',editingHomeworkId='',editingClassId='';
+let students=[],homework=[],classes=[],allClasses=[],editingStudentId='',editingPageId='',editingHomeworkId='',editingClassId='';
 async function api(path,options={}){const res=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw new Error(data.error||'Request failed');return data}
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadHomework();loadClasses();loadPages()}
@@ -129,15 +141,69 @@ function renderClassItem(c){
  return '<div class="item"><div><b>'+esc(c.className)+'</b><div class="studentMeta">'+esc(formatClassDate(c.dateTime))+' · '+esc(names)+'</div><div><a href="'+escAttr(c.zoomUrl)+'" target="_blank" rel="noopener">Zoom ↗</a> · <a href="'+escAttr(c.meetingUrl)+'" target="_blank" rel="noopener">Meeting ↗</a></div></div><div class="actions"><span class="pill">'+(current?'Current':'Upcoming')+'</span><button class="btn light" onclick="editClass(\''+escAttr(c.id)+'\')">Edit</button><button class="btn danger" onclick="deleteClass(\''+escAttr(c.id)+'\')">Delete</button></div></div>';
 }
 async function loadClasses(){
- try{const d=await api('/api/classes');classes=[...(d.current||[]),...(d.future||[])];students=d.students||students;document.getElementById('currentClasses').innerHTML=(d.current||[]).map(renderClassItem).join('')||'<p class="muted">No current classes.</p>';document.getElementById('futureClasses').innerHTML=(d.future||[]).map(renderClassItem).join('')||'<p class="muted">No upcoming classes.</p>';renderClassStudents()}
- catch(e){document.getElementById('currentClasses').textContent=e.message}
+ try{
+  const d=await api('/api/classes');
+  allClasses=d.classes||[...(d.current||[]),...(d.future||[])];
+  classes=allClasses;
+  students=d.students||students;
+  populateClassStudentFilter();
+  applyClassFilters();
+  renderClassStudents();
+ }catch(e){document.getElementById('currentClasses').textContent=e.message}
 }
+function populateClassStudentFilter(){
+ const el=document.getElementById('classStudentFilter');
+ const selected=el.value;
+ el.innerHTML='<option value="">All students</option>'+students.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(s=>'<option value="'+escAttr(s.id)+'">'+esc(s.name)+'</option>').join('');
+ if(students.some(s=>s.id===selected))el.value=selected;
+}
+function dateOnlyLocal(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
+function dateKey(d){return d.toISOString().slice(0,10)}
+function classDateRange(preset){
+ const now=new Date(), today=dateOnlyLocal(now);
+ if(preset==='today')return [today,today];
+ if(preset==='current-month')return [new Date(now.getFullYear(),now.getMonth(),1),new Date(now.getFullYear(),now.getMonth()+1,0)];
+ if(preset==='next-month')return [new Date(now.getFullYear(),now.getMonth()+1,1),new Date(now.getFullYear(),now.getMonth()+2,0)];
+ if(preset==='custom'){
+  const from=document.getElementById('classFromDate').value, to=document.getElementById('classToDate').value;
+  return [from?new Date(from+'T00:00:00'):null,to?new Date(to+'T23:59:59.999'):null];
+ }
+ return [null,null];
+}
+function applyClassFilters(){
+ const studentId=document.getElementById('classStudentFilter').value;
+ const preset=document.getElementById('classDatePreset').value;
+ const [from,to]=classDateRange(preset);
+ const now=Date.now();
+ let filtered=allClasses.filter(c=>{
+  if(studentId && !(c.studentIds||[]).includes(studentId))return false;
+  const t=new Date(c.dateTime).getTime();
+  if(preset==='active')return t<=now && now<t+3600000 || t>now;
+  if(from && t<from.getTime())return false;
+  if(to && t>to.getTime())return false;
+  return true;
+ });
+ const current=[],future=[],past=[];
+ filtered.forEach(c=>{const t=new Date(c.dateTime).getTime();if(t<=now&&now<t+3600000)current.push(c);else if(t>now)future.push(c);else past.push(c)});
+ const asc=(a,b)=>new Date(a.dateTime)-new Date(b.dateTime);
+ current.sort(asc);future.sort(asc);past.sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime));
+ document.getElementById('currentClasses').innerHTML=current.map(renderClassItem).join('')||'<p class="muted">No current classes match these filters.</p>';
+ document.getElementById('futureClasses').innerHTML=future.map(renderClassItem).join('')||'<p class="muted">No upcoming classes match these filters.</p>';
+ document.getElementById('pastClasses').innerHTML=past.map(renderClassItem).join('')||'<p class="muted">No past classes match these filters.</p>';
+ document.getElementById('classFilterSummary').textContent=filtered.length+' class'+(filtered.length===1?'':'es')+' shown';
+}
+
 function renderClassStudents(selected=[]){document.getElementById('classStudents').innerHTML=students.map(s=>'<label class="level"><input type="checkbox" name="studentIds" value="'+escAttr(s.id)+'" '+(selected.includes(s.id)?'checked':'')+'><span>'+esc(s.name)+'</span></label>').join('')||'<p class="muted">Create students first.</p>'}
 function toDateTimeLocal(value){const d=new Date(value);const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);const o=Object.fromEntries(parts.map(x=>[x.type,x.value]));return o.year+'-'+o.month+'-'+o.day+'T'+o.hour+':'+o.minute}
 function openClassForm(item){const card=document.getElementById('classFormCard'),f=document.getElementById('classForm');card.classList.remove('hidden');f.reset();editingClassId=item?.id||'';document.getElementById('classFormTitle').textContent=item?'Edit Class':'Create Class';if(item){f.elements.className.value=item.className||'';f.elements.meetingUrl.value=item.meetingUrl||'';f.elements.zoomUrl.value=item.zoomUrl||'';f.elements.dateTime.value=toDateTimeLocal(item.dateTime)}renderClassStudents(item?.studentIds||[]);document.getElementById('classError').textContent='';window.scrollTo({top:card.offsetTop-20,behavior:'smooth'})}
 function closeClassForm(){document.getElementById('classFormCard').classList.add('hidden');editingClassId='';document.getElementById('classForm').reset()}
 function editClass(id){const x=classes.find(c=>c.id===id);if(x)openClassForm(x)}
 async function deleteClass(id){const x=classes.find(c=>c.id===id);if(!x||!confirm('Delete '+x.className+'?'))return;try{await api('/api/classes',{method:'DELETE',body:JSON.stringify({id})});await loadClasses()}catch(e){alert(e.message)}}
+document.getElementById('classStudentFilter').addEventListener('change',applyClassFilters);
+document.getElementById('classDatePreset').addEventListener('change',()=>{document.getElementById('classCustomDates').classList.toggle('hidden',document.getElementById('classDatePreset').value!=='custom');applyClassFilters()});
+document.getElementById('classFromDate').addEventListener('change',applyClassFilters);
+document.getElementById('classToDate').addEventListener('change',applyClassFilters);
+document.getElementById('clearClassFilters').addEventListener('click',()=>{document.getElementById('classStudentFilter').value='';document.getElementById('classDatePreset').value='active';document.getElementById('classCustomDates').classList.add('hidden');document.getElementById('classFromDate').value='';document.getElementById('classToDate').value='';applyClassFilters()});
 document.getElementById('newClassBtn').addEventListener('click',()=>openClassForm());
 document.getElementById('cancelClass').addEventListener('click',closeClassForm);
 document.getElementById('classForm').addEventListener('submit',async e=>{
