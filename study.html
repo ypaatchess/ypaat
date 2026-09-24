@@ -91,7 +91,7 @@ function exerciseKey(){return window.selectedNodeId||'root'}
 function exercise(){return chapter()?.exercises?.[exerciseKey()]||null}
 function childOf(ch,parentId){return (ch.moves||[]).find(m=>(m.parentId||null)===(parentId||null))||null}
 function exerciseLine(ch,startId){const out=[];let n=childOf(ch,startId);while(n){out.push(n);n=childOf(ch,n.id)}return out}
-let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseSaving=false;
+let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false;
 function renderExercise(){
  const ex=exercise();
  $('exerciseEnabled').checked=!!ex;
@@ -112,7 +112,7 @@ function replay(ch){const g=startGame(ch);const path=nodePath(ch,window.selected
 function rebuild(){
  const ch=chapter();const r=replay(ch);game=r.g;currentPly=r.path.length;
  states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen(),...r.arr.map(x=>x.fen)];
- exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;
+ exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];
  const ex=!isAdmin?exercise():null;
  board.set({fen:game.fen(),lastMove:r.path.length?[r.path[r.path.length-1].from,r.path[r.path.length-1].to]:undefined,
    movable:{enabled:isAdmin||!!ex,free:false,color:game.turn()==='w'?'white':'black'},
@@ -141,6 +141,7 @@ function makeMove(orig,dest){
    if(actual!==expected){
      $('exerciseFeedback').textContent=ex.retry||'Try again.';
      exerciseWrongMoves++;
+     exerciseWrongEvents.push({step:exerciseStep+1,expected:expected,actual:actual,at:new Date().toISOString()});
      exerciseGame=null;exerciseStep=0;
      setTimeout(()=>rebuild(),350);
      return
@@ -166,7 +167,7 @@ async function saveExerciseAttempt(lineLength){
  if(isAdmin||exerciseSaving)return;
  exerciseSaving=true;
  try{
-   await api('/api/study-attempts',{method:'POST',body:JSON.stringify({studyId:study.id,chapterId:chapter().id,lineLength,completedMoves:lineLength,wrongMoves:exerciseWrongMoves})});
+   await api('/api/study-attempts',{method:'POST',body:JSON.stringify({studyId:study.id,chapterId:chapter().id,lineLength,completedMoves:lineLength,wrongMoves:exerciseWrongMoves,wrongEvents:exerciseWrongEvents})});
  }catch(e){console.warn('Could not save exercise attempt',e)}
  finally{exerciseSaving=false}
 }
