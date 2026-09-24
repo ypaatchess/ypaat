@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YPAAT Study</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/chessground@10.2.0/assets/chessground.base.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/chessground@10.2.0/assets/chessground.brown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/chessground@10.2.0/assets/chessground.cburnett.css">
+<style>
+:root{--ink:#10202a;--muted:#66747d;--cream:#f7f4ed;--paper:#fff;--green:#173f35;--gold:#d9a441;--line:#e7e1d6}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1320px,94%);margin:24px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:800;font-size:20px}.muted{color:var(--muted)}.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.btn.light{background:#eeeae1;color:var(--ink)}.btn.gold{background:var(--gold);color:#17130b}.btn.danger{background:#f5dddd;color:#7d2525}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 35px rgba(16,32,42,.06)}.layout{display:grid;grid-template-columns:minmax(420px,720px) minmax(300px,1fr);gap:18px;align-items:start}.board{width:min(72vw,680px);height:min(72vw,680px);max-width:680px;max-height:680px;margin:auto}.cg-wrap{width:100%;height:100%}.studyHead{display:flex;justify-content:space-between;gap:15px;align-items:start;margin-bottom:15px}.studyHead h1{margin:0 0 4px}.chapterTabs{display:flex;gap:7px;overflow:auto;padding-bottom:8px}.chapterTabs button{white-space:nowrap}.moves{display:flex;flex-wrap:wrap;gap:5px;min-height:42px;max-height:180px;overflow:auto;padding:8px;background:#faf9f5;border-radius:12px}.move{border:0;background:transparent;padding:5px 7px;border-radius:7px;cursor:pointer}.move:hover,.move.active{background:#e7dfcc}.sideGrid{display:grid;gap:14px}.form{display:grid;gap:10px}.form input,.form textarea,.form select{width:100%;padding:10px;border:1px solid #d9d4ca;border-radius:10px;font:inherit}.form textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.studentChecks{display:flex;flex-wrap:wrap;gap:7px}.studentChecks label{padding:8px 10px;border:1px solid var(--line);border-radius:999px}.error{color:#a33}.success{color:#20513d}.hidden{display:none!important}.shareBox{display:flex;gap:8px}.shareBox input{flex:1}.pgn{min-height:130px;font-family:monospace}.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.note{padding:10px;background:#faf9f5;border-radius:10px}.studentMode .adminOnly{display:none}.viewerNotice{padding:10px 12px;background:#edf4ef;border-radius:12px;color:#20513d;font-weight:700}@media(max-width:900px){.layout{grid-template-columns:1fr}.board{width:min(90vw,620px);height:min(90vw,620px)}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top"><div><div class="brand">♞ YPAAT Study</div><div id="roleText" class="muted">Loading study…</div></div><div class="toolbar"><a class="btn light" href="/admin.html">Admin</a><a class="btn light" href="/student.html">Student portal</a></div></div>
+<div id="loading" class="card">Loading…</div>
+<div id="app" class="hidden">
+<div class="studyHead card"><div><h1 id="studyTitle">Study</h1><div id="studyDescription" class="muted"></div></div><div class="adminOnly"><button class="btn gold" id="saveStudy">Save study</button></div></div>
+<div class="layout">
+<section class="card">
+<div class="chapterTabs" id="chapters"></div>
+<div class="board" id="board"></div>
+<div class="toolbar"><button class="btn light" id="firstMove">⏮</button><button class="btn light" id="prevMove">◀</button><button class="btn light" id="nextMove">▶</button><button class="btn light" id="lastMove">⏭</button><button class="btn light adminOnly" id="resetChapter">Reset line</button></div>
+<div id="moves" class="moves"></div>
+<div id="moveCommentWrap" class="adminOnly" style="margin-top:12px"><label>Comment on selected move</label><textarea id="moveComment" class="form" style="margin-top:6px;min-height:70px"></textarea></div>
+</section>
+<aside class="sideGrid">
+<div class="card adminOnly">
+<h3>Study settings</h3>
+<div class="form">
+<label>Title<input id="editTitle"></label>
+<label>Description<textarea id="editDescription"></textarea></label>
+<label>Sharing<select id="visibility"><option value="assigned">Only assigned students</option><option value="public">Anyone with access link</option></select></label>
+<div><b>Share with students</b><div id="studentChecks" class="studentChecks" style="margin-top:7px"></div></div>
+<div class="shareBox"><input id="shareUrl" readonly><button class="btn light" id="copyShare">Copy</button></div>
+</div>
+</div>
+<div class="card adminOnly">
+<h3>Chapters</h3>
+<div class="toolbar"><button class="btn" id="newChapter">+ Chapter</button><button class="btn danger" id="deleteChapter">Delete</button></div>
+<label>Chapter title<input id="chapterTitle" style="width:100%;margin-top:6px;padding:10px;border:1px solid #d9d4ca;border-radius:10px"></label>
+<label style="display:block;margin-top:10px">Starting FEN<input id="chapterFen" style="width:100%;margin-top:6px;padding:10px;border:1px solid #d9d4ca;border-radius:10px" placeholder="start"></label>
+<label style="display:block;margin-top:10px">Chapter notes<textarea id="chapterNotes" style="width:100%;margin-top:6px;padding:10px;border:1px solid #d9d4ca;border-radius:10px"></textarea></label>
+</div>
+<div class="card adminOnly">
+<h3>PGN import / export</h3>
+<textarea id="pgnBox" class="pgn" placeholder="Paste PGN here to replace the current chapter line"></textarea>
+<div class="toolbar"><button class="btn" id="importPgn">Import PGN</button><button class="btn light" id="exportPgn">Export PGN</button></div>
+</div>
+<div class="card">
+<h3>Chapter notes</h3><div id="notes" class="note">—</div>
+<div id="viewerNotice" class="viewerNotice hidden">Read-only study shared by YPAAT.</div>
+</div>
+<div class="card adminOnly"><button class="btn danger" id="deleteStudy">Delete study</button><div id="status" style="margin-top:10px"></div></div>
+</aside>
+</div>
+</div>
+</div>
+<script type="module">
+import { Chessground } from 'https://cdn.jsdelivr.net/npm/@lichess-org/chessground@10.2.0/dist/chessground.js';
+import { Chess } from 'https://cdn.jsdelivr.net/npm/chess.js@1.4.0/dist/esm/chess.js';
+
+const $=id=>document.getElementById(id);
+async function api(path,options={}){const res=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw new Error(data.error||'Request failed');return data}
+const params=new URLSearchParams(location.search);let studyId=params.get('id')||'',study=null,students=[],isAdmin=false,isStudent=false,currentChapter=0,currentPly=0,board=null,game=null,states=[];
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function chapter(){return study?.chapters?.[currentChapter]}
+function startGame(ch){try{return ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess()}catch{return new Chess()}}
+function replay(ch,ply){const g=startGame(ch);const arr=[];for(let i=0;i<Math.min(ply,ch.moves.length);i++){const m=ch.moves[i];try{const made=g.move({from:m.from,to:m.to,promotion:m.promotion||'q'});arr.push({fen:g.fen(),san:made.san})}catch{break}}return {g,arr}}
+function rebuild(){const ch=chapter();const r=replay(ch,currentPly);game=r.g;states=[ch.startFen&&ch.startFen!=='start'?ch.startFen: new Chess().fen(),...r.arr.map(x=>x.fen)];board.set({fen:game.fen(),lastMove:currentPly? [ch.moves[currentPly-1].from,ch.moves[currentPly-1].to]:undefined,movable:{free:false,color:game.turn()==='w'?'white':'black'}});renderMoves();renderFields()}
+function renderMoves(){const ch=chapter();$('moves').innerHTML=ch.moves.map((m,i)=>'<button class="move '+(i===currentPly-1?'active':'')+'" data-ply="'+(i+1)+'">'+(i%2===0?((i/2|0)+1)+'. ':'')+esc(m.san||'')+'</button>').join('')||'<span class="muted">No moves yet. Drag a piece on the board to begin.</span>';document.querySelectorAll('.move').forEach(b=>b.onclick=()=>{currentPly=Number(b.dataset.ply);rebuild()});$('moveComment').value=ch.moves[Math.max(0,currentPly-1)]?.comment||''}
+function renderChapters(){const chs=study.chapters||[];$('chapters').innerHTML=chs.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{currentChapter=Number(b.dataset.ch);currentPly=0;rebuild()})}
+function renderFields(){const ch=chapter();if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
+function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
+function setupBoard(){board=Chessground($('board'),{orientation:'white',coordinates:true,drawable:{enabled:true,visible:true},movable:{free:false,color:'white'},events:{move:()=>{},change:()=>{}}});board.set({movable:{events:{after:(orig,dest)=>makeMove(orig,dest)}}});rebuild()}
+function makeMove(orig,dest){if(!isAdmin)return rebuild();const ch=chapter();const r=replay(ch,currentPly);const g=r.g;let made=null;try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}if(!made){rebuild();return}ch.moves=ch.moves.slice(0,currentPly);ch.moves.push({from:orig,to:dest,promotion:'q',san:made.san,comment:''});currentPly++;rebuild()}
+function jump(p){currentPly=Math.max(0,Math.min(chapter().moves.length,p));rebuild()}
+async function save(){if(!isAdmin)return;study.title=$('editTitle').value.trim();study.description=$('editDescription').value.trim();study.visibility=$('visibility').value;study.studentIds=[...document.querySelectorAll('#studentChecks input:checked')].map(x=>x.value);const ch=chapter();ch.title=$('chapterTitle').value.trim()||'Untitled chapter';ch.startFen=$('chapterFen').value.trim()||'start';ch.notes=$('chapterNotes').value;const d=await api('/api/studies',{method:'PUT',body:JSON.stringify(study)});study=d.study;renderChapters();renderStudents();renderFields();setStatus('Study saved','success')}
+function setStatus(t,c=''){ $('status').textContent=t;$('status').className=c}
+async function load(){try{
+ let d;
+ if(studyId)d=await api('/api/studies?id='+encodeURIComponent(studyId));
+ else {d=await api('/api/auth/me');if(!d.user){location.href='/admin.html';return}isAdmin=true;d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});studyId=d.study.id;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId))}
+ study=d.study;students=d.students||[];if(!isAdmin){const am=await api('/api/auth/me').catch(()=>({user:null}));isAdmin=!!am.user;if(!isAdmin){const sm=await api('/api/auth/student-me');isStudent=!!sm.user}}
+ if(!isAdmin&&!isStudent){location.href='/student.html';return}
+ $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href;$('viewerNotice').classList.toggle('hidden',isAdmin);renderChapters();renderStudents();setupBoard();
+ }catch(e){$('loading').textContent=e.message}}
+$('firstMove').onclick=()=>jump(0);$('prevMove').onclick=()=>jump(currentPly-1);$('nextMove').onclick=()=>jump(currentPly+1);$('lastMove').onclick=()=>jump(chapter().moves.length);
+$('saveStudy').onclick=save;
+$('newChapter').onclick=()=>{study.chapters.push({id:crypto.randomUUID(),title:'Chapter '+(study.chapters.length+1),startFen:'start',notes:'',moves:[]});currentChapter=study.chapters.length-1;currentPly=0;renderChapters();rebuild()};
+$('deleteChapter').onclick=()=>{if(study.chapters.length<2){alert('A study must keep at least one chapter.');return}if(confirm('Delete this chapter?')){study.chapters.splice(currentChapter,1);currentChapter=Math.max(0,currentChapter-1);currentPly=0;renderChapters();rebuild()}};
+$('resetChapter').onclick=()=>{chapter().moves=[];currentPly=0;rebuild()};
+$('chapterTitle').oninput=()=>{chapter().title=$('chapterTitle').value;renderChapters()};
+$('chapterNotes').oninput=()=>{$('notes').textContent=$('chapterNotes').value};
+$('moveComment').oninput=()=>{const m=chapter().moves[Math.max(0,currentPly-1)];if(m)m.comment=$('moveComment').value};
+$('copyShare').onclick=async()=>{await navigator.clipboard.writeText(location.href);setStatus('Share link copied','success')};
+$('exportPgn').onclick=()=>{const g=startGame(chapter());for(const m of chapter().moves){try{g.move({from:m.from,to:m.to,promotion:m.promotion||'q'})}catch{}}$('pgnBox').value=g.pgn()};
+$('importPgn').onclick=()=>{try{const g=new Chess();g.loadPgn($('pgnBox').value);const hist=g.history({verbose:true});chapter().startFen='start';chapter().moves=hist.map(m=>({from:m.from,to:m.to,promotion:m.promotion||'q',san:m.san,comment:''}));currentPly=chapter().moves.length;rebuild();setStatus('PGN imported','success')}catch(e){setStatus('Invalid PGN: '+e.message)}};
+$('deleteStudy').onclick=async()=>{if(!confirm('Delete this study permanently?'))return;await api('/api/studies',{method:'DELETE',body:JSON.stringify({id:study.id})});location.href='/admin.html'};
+load();
+</script>
+</body></html>
