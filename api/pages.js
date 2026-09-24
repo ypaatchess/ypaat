@@ -9,7 +9,7 @@ const seed=[
 ];
 function body(req){return new Promise((resolve,reject)=>{let r='';req.on('data',c=>r+=c);req.on('end',()=>{try{resolve(r?JSON.parse(r):{})}catch(e){reject(e)}});req.on('error',reject)})}
 function ok(res,status,data){res.status(status).json(data)}
-async function load(redis){let pages=await redis.get(KEY);if(!Array.isArray(pages)){pages=seed.map(p=>({...p,id:crypto.randomUUID(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));await redis.set(KEY,pages)}return pages}
+async function load(redis){let raw=await redis.get(KEY);let pages=null;if(raw){try{pages=JSON.parse(raw)}catch{pages=null}}if(!Array.isArray(pages)){pages=seed.map(p=>({...p,id:crypto.randomUUID(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));await redis.set(KEY,JSON.stringify(pages))}return pages}
 async function handler(req,res){
  try{
   const redis=await getRedis();
@@ -27,16 +27,16 @@ async function handler(req,res){
     const b=await body(req);if(!b.title||!b.slug||!b.content)return ok(res,400,{error:'Title, slug and content are required'});
     if(pages.some(p=>p.slug===b.slug))return ok(res,409,{error:'That URL slug already exists'});
     const page={id:crypto.randomUUID(),title:b.title,slug:b.slug,description:b.description||'',content:b.content,status:b.status==='draft'?'draft':'published',nav:b.nav==='yes'?'yes':'no',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-    pages.push(page);await redis.set(KEY,pages);return ok(res,201,{page});
+    pages.push(page);await redis.set(KEY,JSON.stringify(pages));return ok(res,201,{page});
   }
   if(req.method==='PUT'){
     const b=await body(req);const i=pages.findIndex(p=>p.id===b.id);if(i<0)return ok(res,404,{error:'Page not found'});
     if(b.slug&&pages.some((p,j)=>j!==i&&p.slug===b.slug))return ok(res,409,{error:'That URL slug already exists'});
     pages[i]={...pages[i],title:b.title,slug:b.slug,description:b.description||'',content:b.content,status:b.status==='draft'?'draft':'published',nav:b.nav==='yes'?'yes':'no',updatedAt:new Date().toISOString()};
-    await redis.set(KEY,pages);return ok(res,200,{page:pages[i]});
+    await redis.set(KEY,JSON.stringify(pages));return ok(res,200,{page:pages[i]});
   }
   if(req.method==='DELETE'){
-    const b=await body(req);const next=pages.filter(p=>p.id!==b.id);if(next.length===pages.length)return ok(res,404,{error:'Page not found'});await redis.set(KEY,next);return ok(res,200,{ok:true});
+    const b=await body(req);const next=pages.filter(p=>p.id!==b.id);if(next.length===pages.length)return ok(res,404,{error:'Page not found'});await redis.set(KEY,JSON.stringify(next));return ok(res,200,{ok:true});
   }
   return res.status(405).json({error:'Method not allowed'});
  }catch(e){console.error(e);return res.status(500).json({error:'Page service error'})}
