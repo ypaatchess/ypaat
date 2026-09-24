@@ -62,7 +62,8 @@ module.exports=async function(req,res){
      startFen:clean(ch.startFen)||'start',
      notes:String(ch.notes??''),
      moves:Array.isArray(ch.moves)?ch.moves.map(m=>({from:clean(m.from),to:clean(m.to),promotion:clean(m.promotion)||undefined,san:clean(m.san),comment:String(m.comment??'')})):[],
-     pgn:String(ch.pgn??'')
+     pgn:String(ch.pgn??''),
+     shapesByPly:ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{}
    })):studies[i].chapters;
    const item={...studies[i],title,description,visibility,studentIds,chapters,updatedAt:new Date().toISOString()};
    studies[i]=item;await redis.set(KEY,JSON.stringify(studies));
