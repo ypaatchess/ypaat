@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YPAAT Admin</title>
+<style>
+body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}
+.wrap{max-width:900px;margin:60px auto;padding:20px}
+.card{background:#fff;border:1px solid #e7e1d6;border-radius:22px;padding:30px;box-shadow:0 15px 45px rgba(16,32,42,.08)}
+h1,h2{margin-top:0}.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#7d6a45;font-weight:700}
+form{display:grid;gap:14px;max-width:520px}label{font-size:12px;font-weight:700}input,textarea,select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4ca;border-radius:10px;font:inherit}textarea{min-height:160px}
+button{border:0;border-radius:999px;padding:12px 18px;font-weight:700;cursor:pointer;background:#10202a;color:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hidden{display:none}.error{color:#a33;margin-top:12px}.muted{color:#66747d}
+.item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;border:1px solid #e7e1d6;border-radius:12px;margin:10px 0}.item button{background:#f1eee6;color:#10202a}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}
+@media(max-width:650px){.row{grid-template-columns:1fr}.top{align-items:flex-start;gap:12px;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="login" class="card">
+<div class="eyebrow">YPAAT Chess Academy</div>
+<h1>Administrator Login</h1>
+<p class="muted">Secure access to the academy content manager.</p>
+<form id="loginForm">
+<div><label>Email</label><input id="email" type="email" required autocomplete="username"></div>
+<div><label>Password</label><input id="password" type="password" required autocomplete="current-password"></div>
+<button type="submit">Sign in</button>
+</form>
+<div id="loginError" class="error"></div>
+<p><a href="/">← Back to website</a></p>
+</div>
+
+<div id="dashboard" class="hidden">
+<div class="top"><div><div class="eyebrow">YPAAT CMS</div><h1>Admin Dashboard</h1></div><button id="logout">Sign out</button></div>
+<div class="card">
+<h2>Pages</h2>
+<p class="muted">Create and manage public learning pages.</p>
+<div id="pages"></div>
+</div>
+<div class="card" style="margin-top:18px">
+<h2 id="formTitle">Create New Page</h2>
+<form id="pageForm">
+<div class="row"><div><label>Title</label><input name="title" required></div><div><label>Slug</label><input name="slug" required></div></div>
+<div><label>Description</label><input name="description"></div>
+<div><label>Content (HTML)</label><textarea name="content" required></textarea></div>
+<div class="row"><div><label>Status</label><select name="status"><option value="published">Published</option><option value="draft">Draft</option></select></div><div><label>Navigation</label><select name="nav"><option value="yes">Show in navigation</option><option value="no">Do not show</option></select></div></div>
+<button id="saveButton" type="submit">Create Page</button>
+</form>
+<div id="pageError" class="error"></div>
+</div>
+</div>
+</div>
+<script>
+let editingId='';
+async function api(path,options={}){const res=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw new Error(data.error||'Request failed');return data}
+function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadPages()}
+async function checkLogin(){try{const d=await api('/api/auth/me');if(d.user)showDashboard()}catch{}}
+async function loadPages(){try{const d=await api('/api/pages');const el=document.getElementById('pages');el.innerHTML=(d.pages||[]).map(p=>'<div class="item"><div><b>'+esc(p.title)+'</b><br><small>#'+esc(p.slug)+' · '+esc(p.status)+'</small></div><div><button onclick="editPage(\''+escAttr(p.id||'')+'\')">Edit</button> <button onclick="deletePage(\''+escAttr(p.id||'')+'\')">Delete</button></div></div>').join('')||'<p class="muted">No pages yet.</p>'}catch(e){document.getElementById('pages').textContent=e.message}}
+function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function escAttr(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+async function editPage(id){try{const d=await api('/api/pages');const p=(d.pages||[]).find(x=>x.id===id);if(!p)return;const f=document.getElementById('pageForm');['title','slug','description','content','status','nav'].forEach(k=>f.elements[k].value=p[k]||'');editingId=p.id||'';document.getElementById('formTitle').textContent='Edit Page';document.getElementById('saveButton').textContent='Save Changes';window.scrollTo(0,document.body.scrollHeight)}catch(e){alert(e.message)}}
+async function deletePage(id){if(!confirm('Delete this page?'))return;try{await api('/api/pages',{method:'DELETE',body:JSON.stringify({id})});loadPages()}catch(e){alert(e.message)}}
+document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();const err=document.getElementById('loginError');err.textContent='Signing in…';try{const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:email.value,password:password.value})});if(d.user){err.textContent='';showDashboard()}else throw new Error('Login failed')}catch(x){err.textContent=x.message}});
+document.getElementById('logout').addEventListener('click',async()=>{try{await api('/api/auth/logout',{method:'POST'})}catch{}location.reload()});
+document.getElementById('pageForm').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget;const data=Object.fromEntries(new FormData(f));data.slug=data.slug.toLowerCase().trim().replace(/[^a-z0-9-]+/g,'-').replace(/^-|-$/g,'');try{await api('/api/pages',{method:editingId?'PUT':'POST',body:JSON.stringify({...data,id:editingId||undefined})});f.reset();editingId='';document.getElementById('formTitle').textContent='Create New Page';document.getElementById('saveButton').textContent='Create Page';document.getElementById('pageError').textContent='';loadPages()}catch(x){document.getElementById('pageError').textContent=x.message}});
+checkLogin();
+</script>
+</body>
+</html>
