@@ -54,9 +54,18 @@ module.exports=async function(req,res){
    if(id){
     const study=studies.find(x=>x.id===id);
     if(!study)return ok(res,404,{error:'Study not found'});
+    if(req.query?.view==='student'){
+     if(!student)return ok(res,401,{error:'Student login required'});
+     if(!canStudentView(study,student.id))return ok(res,403,{error:'You do not have access to this study'});
+     return ok(res,200,{study:safeStudyForStudent(study,student.id),students:[]});
+    }
     if(!admin&&!student)return ok(res,401,{error:'Login required'});
     if(!admin&&!canStudentView(study,student.id))return ok(res,403,{error:'You do not have access to this study'});
     return ok(res,200,{study:admin?safeStudy(study):safeStudyForStudent(study,student.id),students:admin?students.map(s=>({id:s.id,name:s.name,email:s.email})):[]});
+   }
+   if(req.query?.view==='student'){
+    if(!student)return ok(res,401,{error:'Student login required'});
+    return ok(res,200,{studies:studies.filter(s=>(s.visibility!=='public'&&(s.studentIds||[]).includes(student.id))).map(s=>safeStudyForStudent(s,student.id))});
    }
    if(admin)return ok(res,200,{studies:studies.map(safeStudy),students:students.map(s=>({id:s.id,name:s.name,email:s.email}))});
    // The student portal list should contain only studies explicitly shared with this student.
