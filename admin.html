@@ -293,7 +293,12 @@ async function loadStudies(){
   const list=d.studies||[];
   const byId=Object.fromEntries((d.students||[]).map(s=>[s.id,s.name]));
   document.getElementById('studyCount').textContent=list.length;
-  document.getElementById('studiesList').innerHTML=list.map(s=>'<div class="item"><div style="display:flex;gap:12px;align-items:flex-start"><input class="studySelect" type="checkbox" value="'+escAttr(s.id)+'" aria-label="Select '+escAttr(s.title)+'"><div><b>'+esc(s.title)+'</b><div class="studentMeta">'+esc(s.description||'')+' · '+(s.chapters||[]).length+' chapters · '+(s.visibility==='public'?'Public':'Assigned')+'</div><div>'+(s.studentIds||[]).map(id=>'<span class="pill">'+esc(byId[id]||'Student')+'</span>').join('')+'</div></div></div><div class="actions"><a class="btn light" href="/study.html?id='+encodeURIComponent(s.id)+'">Open</a><button class="btn danger" onclick="deleteStudyAdmin(\''+escAttr(s.id)+'\')">Delete</button></div></div>').join('')||'<p class="muted">No studies yet.</p>';
+  const studyStudents=d.students||[];
+  document.getElementById('studiesList').innerHTML=list.map(s=>{
+   const assigned=new Set(s.studentIds||[]);
+   const options=studyStudents.map(st=>'<option value="'+escAttr(st.id)+'" '+(assigned.has(st.id)?'selected':'')+'>'+esc(st.name)+' · '+esc(st.email)+'</option>').join('');
+   return '<div class="item"><div style="display:flex;gap:12px;align-items:flex-start"><input class="studySelect" type="checkbox" value="'+escAttr(s.id)+'" aria-label="Select '+escAttr(s.title)+'"><div style="flex:1"><b>'+esc(s.title)+'</b><div class="studentMeta">'+esc(s.description||'')+' · '+(s.chapters||[]).length+' chapters · '+(s.visibility==='public'?'Public':'Assigned')+'</div><div>'+(s.studentIds||[]).map(id=>'<span class="pill">'+esc(byId[id]||'Student')+'</span>').join('')+'</div><div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label class="muted" style="font-weight:700">Assign students</label><select class="studyStudentPicker" data-study-id="'+escAttr(s.id)+'" multiple size="3" style="min-width:260px;padding:7px;border:1px solid #d9d4ca;border-radius:8px">'+options+'</select><button class="btn light" onclick="assignStudyStudents(\''+escAttr(s.id)+'\')">Save assignment</button></div></div></div><div class="actions"><a class="btn light" href="/study.html?id='+encodeURIComponent(s.id)+'">Open</a><button class="btn danger" onclick="deleteStudyAdmin(\''+escAttr(s.id)+'\')">Delete</button></div></div>';
+  }).join('')||'<p class="muted">No studies yet.</p>';
   document.querySelectorAll('.studySelect').forEach(x=>x.addEventListener('change',updateStudySelection));
   document.getElementById('selectAllStudies').checked=false;
   updateStudySelection();
@@ -462,6 +467,20 @@ async function loadAttempts(){
    return '<details class="item"><summary style="cursor:pointer"><b>'+esc(names[a.studentId]||'Student')+'</b> · '+esc(titles[a.studyId]||'Study')+' · '+esc(a.completedAt?new Date(a.completedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'')+' · '+esc(a.completed?'Completed':'Incomplete')+' · '+a.completedMoves+'/'+a.lineLength+' moves · '+a.wrongMoves+' wrong · '+pct+'%</summary><div style="margin-top:10px">'+(mistakes||'<span class="muted">No incorrect moves recorded.</span>')+'</div></details>'
   }).join('')||'<p class="muted">No exercise attempts yet.</p>';
  }catch(e){document.getElementById('attemptsList').textContent=e.message}
+}
+async function assignStudyStudents(id){
+ const picker=document.querySelector('.studyStudentPicker[data-study-id="'+CSS.escape(id)+'"]');
+ if(!picker)return;
+ const study=(await api('/api/studies?id='+encodeURIComponent(id))).study;
+ const studentIds=[...picker.selectedOptions].map(o=>o.value);
+ study.studentIds=studentIds;
+ study.visibility='assigned';
+ try{
+   await api('/api/studies',{method:'PUT',body:JSON.stringify(study)});
+   const status=document.getElementById('lichessImportStatus');
+   status.textContent='Student assignment saved.';
+   await loadStudies();
+ }catch(e){alert(e.message)}
 }
 async function deleteStudyAdmin(id){if(!confirm('Delete this study?'))return;try{await api('/api/studies',{method:'DELETE',body:JSON.stringify({id})});await loadStudies()}catch(e){alert(e.message)}}
 document.getElementById('selectAllStudies').addEventListener('change',e=>{document.querySelectorAll('.studySelect').forEach(x=>x.checked=e.target.checked);updateStudySelection()});
