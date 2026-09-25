@@ -321,7 +321,15 @@ async function load(){try{
  let d;
  if(studyId)d=await api('/api/studies?id='+encodeURIComponent(studyId));
  else {d=await api('/api/auth/me');if(!d.user){location.href='/admin.html';return}isAdmin=true;d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});studyId=d.study.id;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0')}
- study=d.study;normalizeStudy();students=d.students||[];if(!isAdmin){const am=await api('/api/auth/me').catch(()=>({user:null}));isAdmin=!!am.user;if(!isAdmin){const sm=await api('/api/auth/student-me');isStudent=!!sm.user}}
+ study=d.study;normalizeStudy();students=d.students||[];
+ // Prefer an active student session for the study viewer. This prevents a stale
+ // admin cookie in the same browser from turning the student study into editor mode.
+ const sm=await api('/api/auth/student-me').catch(()=>({user:null}));
+ isStudent=!!sm.user;
+ if(!isStudent){
+   const am=await api('/api/auth/me').catch(()=>({user:null}));
+   isAdmin=!!am.user;
+ }
  if(!isAdmin&&!isStudent){location.href='/student.html';return}
  $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href+'&chapter='+currentChapter;$('viewerNotice').classList.add('hidden');renderChapters();renderStudents();setupBoard();
  }catch(e){$('loading').textContent=e.message}}
