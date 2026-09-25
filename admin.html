@@ -357,7 +357,7 @@ async function importLichessStudy(e){
  try{
   let d;
   if(file){
-   if(!/\\.pgn$/i.test(file.name)) throw new Error('Please choose a PGN file.');
+   if(!/\.pgn$/i.test(file.name)) throw new Error('Please choose a PGN file.');
    status.textContent='Reading PGN file…';
    const pgn=await file.text();
    if(!pgn.trim()) throw new Error('The selected PGN file is empty.');
