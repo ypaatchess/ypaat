@@ -13,6 +13,7 @@ function safeStudy(s){return {...s,studentIds:Array.isArray(s.studentIds)?s.stud
 function canStudentView(study,id){return study.visibility==='public'||(study.studentIds||[]).includes(id)}
 
 module.exports=async function(req,res){
+ res.setHeader('Cache-Control','no-store, max-age=0');
  try{
   const redis=await getRedis();
   const admin=await adminFromRequest(req);
