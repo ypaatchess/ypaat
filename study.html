@@ -115,7 +115,7 @@ function exerciseKey(){return window.selectedNodeId||'root'}
 function exercise(){return chapter()?.exercises?.[exerciseKey()]||null}
 function childOf(ch,parentId){return (ch.moves||[]).find(m=>(m.parentId||null)===(parentId||null))||null}
 function exerciseLine(ch,startId){const out=[];let n=childOf(ch,startId);while(n){out.push(n);n=childOf(ch,n.id)}return out}
-let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false;
+let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false,exerciseAutoPending=false;
 function renderExercise(){
  const ex=exercise();
  $('exerciseEnabled').checked=!!ex;
@@ -189,7 +189,7 @@ function rebuild(){
  const ch=chapter();const r=replay(ch);game=r.g;currentPly=r.path.length;
  states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen()];
  for(const id of r.path){const p=r.map.get(id);if(p)states.push(p.fen)}
- exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];
+ exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];exerciseAutoPending=false;
  renderCustomBoard(game);
  renderMoves();renderFields();renderExercise()
 }
@@ -243,24 +243,48 @@ function renderCustomBoard(g){
      if(p){
        const piece=document.createElement('span');piece.className='custom-piece '+(p.color==='w'?'white':'black');piece.textContent=p.color==='w'?pieceMap[p.type].toUpperCase().replace('♘','♘').replace('♙','♙').replace('♗','♗').replace('♖','♖').replace('♕','♕').replace('♔','♔') : pieceMap[p.type];
        piece.dataset.square=sq;piece.draggable=isAdmin||!!exercise();
-       piece.addEventListener('dragstart',e=>{if(!(isAdmin||exercise())){e.preventDefault();return}e.dataTransfer.setData('text/plain',sq);selected=sq;el.classList.add('selected')});
-       piece.addEventListener('click',e=>{e.stopPropagation();if(!(isAdmin||exercise()))return;if(selected===sq){selected=null;el.classList.remove('selected');return}if(selected){const from=selected;selected=null;makeMove(from,sq)}else{selected=sq;el.classList.add('selected')}});
+       piece.addEventListener('dragstart',e=>{if(!(isAdmin||exercise())||(exercise()&&exerciseAutoPending)){e.preventDefault();return}e.dataTransfer.setData('text/plain',sq);selected=sq;el.classList.add('selected')});
+       piece.addEventListener('click',e=>{e.stopPropagation();if(!(isAdmin||exercise())||(exercise()&&exerciseAutoPending))return;if(selected===sq){selected=null;el.classList.remove('selected');return}if(selected){const from=selected;selected=null;makeMove(from,sq)}else{selected=sq;el.classList.add('selected')}});
        el.appendChild(piece);
      }
      el.addEventListener('dragover',e=>{if(isAdmin||exercise())e.preventDefault()});
-     el.addEventListener('drop',e=>{if(!(isAdmin||exercise()))return;e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(from)makeMove(from,sq)});
-     el.addEventListener('click',()=>{if(!(isAdmin||exercise()))return;if(selected){const from=selected;selected=null;makeMove(from,sq)}});
+     el.addEventListener('drop',e=>{if(!(isAdmin||exercise())||(exercise()&&exerciseAutoPending))return;e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(from)makeMove(from,sq)});
+     el.addEventListener('click',()=>{if(!(isAdmin||exercise())||(exercise()&&exerciseAutoPending))return;if(selected){const from=selected;selected=null;makeMove(from,sq)}});
      grid.appendChild(el);
    }
+ }
+}
+function finishExercise(ex,line){
+ $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
+ saveExerciseAttempt(line.length);
+}
+function autoPlayExerciseMove(ex,line){
+ if(!exerciseGame||exerciseStep>=line.length){exerciseAutoPending=false;return}
+ const move=line[exerciseStep];
+ let made=null;
+ try{made=exerciseGame.move({from:move.from,to:move.to,promotion:move.promotion||'q'})}catch(e){
+   exerciseAutoPending=false;
+   $('exerciseFeedback').textContent='The exercise line contains an invalid automatic move.';
+   return;
+ }
+ exerciseStep++;
+ renderCustomBoard(exerciseGame);
+ if(exerciseStep>=line.length){
+   exerciseAutoPending=false;
+   finishExercise(ex,line);
+ }else{
+   exerciseAutoPending=false;
+   $('exerciseFeedback').textContent='Your turn — find the next move.';
  }
 }
 function makeMove(orig,dest){
  const ch=chapter();
  const ex=!isAdmin?exercise():null;
+ if(ex&&exerciseAutoPending)return;
  const g=ex?(exerciseGame||replay(ch).g):replay(ch).g;
  let made=null;
  try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}
- if(!made){if(ex){exerciseGame=null;exerciseStep=0;rebuild()}else rebuild();return}
+ if(!made){if(ex){exerciseGame=null;exerciseStep=0;exerciseAutoPending=false;rebuild()}else rebuild();return}
  if(ex){
    const line=Array.isArray(ex.line)?ex.line:[{san:ex.expectedSan||''}];
    const expectedNode=line[exerciseStep];
@@ -270,7 +294,7 @@ function makeMove(orig,dest){
      $('exerciseFeedback').textContent=ex.retry||'Try again.';
      exerciseWrongMoves++;
      exerciseWrongEvents.push({step:exerciseStep+1,expected:expected,actual:actual,at:new Date().toISOString()});
-     exerciseGame=null;exerciseStep=0;
+     exerciseGame=null;exerciseStep=0;exerciseAutoPending=false;
      setTimeout(()=>rebuild(),350);
      return
    }
@@ -278,11 +302,12 @@ function makeMove(orig,dest){
    exerciseGame=g;
    renderCustomBoard(g);
    if(exerciseStep>=line.length){
-     $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
-     board.set({movable:{enabled:false}});
-     saveExerciseAttempt(line.length);
+     finishExercise(ex,line);
    }else{
-     $('exerciseFeedback').textContent='Correct — now find the next move.';
+     // The coach's reply (the next move in the saved line) is automatic.
+     exerciseAutoPending=true;
+     $('exerciseFeedback').textContent='Correct — coach is responding…';
+     setTimeout(()=>autoPlayExerciseMove(ex,line),500);
    }
    return
  }
