@@ -4,6 +4,7 @@ const {Chess}=require('chess.js');
 const crypto=require('crypto');
 
 const STUDIES_KEY='ypaat:studies';
+const IMPORT_BATCH_PREFIX='ypaat:study-import:';
 
 function ok(res,status,data){res.status(status).json(data)}
 function clean(v){return String(v??'').trim()}
@@ -266,9 +267,22 @@ module.exports=async function(req,res){
     if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
     const raw=await readBody(req);
     const suppliedPgn=clean(raw.pgn);
+    const batchId=clean(raw.batchId);
+    const batchKey=batchId&&/^[A-Za-z0-9_-]{8,120}$/.test(batchId)?IMPORT_BATCH_PREFIX+batchId:null;
     if(suppliedPgn){
+      let importPgn=suppliedPgn;
+      if(batchKey){
+        const previous=String((await (await getRedis()).get(batchKey))||'');
+        importPgn=previous+suppliedPgn;
+        const redis=await getRedis();
+        if(raw.final!==true){
+          await redis.set(batchKey,importPgn,{EX:3600});
+          return ok(res,202,{ok:true,complete:false});
+        }
+        await redis.del(batchKey);
+      }
       const parsed=parseLichessStudyUrl(clean(raw.url));
-      const result=parsePgn(suppliedPgn,parsed?.studyId||'lichess');
+      const result=parsePgn(importPgn,parsed?.studyId||'lichess');
       const created=await saveImportedStudies(result,clean(raw.title),clean(raw.url)||'PGN file');
       const chapters=created.reduce((n,s)=>n+(s.chapters||[]).length,0);
       const empty=created.reduce((n,s)=>n+(s.chapters||[]).filter(ch=>!(ch.moves||[]).length).length,0);
@@ -298,6 +312,6 @@ module.exports=async function(req,res){
     return ok(res,201,{ok:true,studies:created.map(s=>({id:s.id,title:s.title,chapterCount:s.chapters.length})),studyCount:created.length,chapterCount:chapters,emptyChapterCount:empty});
   }catch(e){
     console.error(e);
-    return res.status(500).json({error:'Lichess study import failed'});
+    return res.status(500).json({error:e?.message||'Lichess study import failed'});
   }
 };
