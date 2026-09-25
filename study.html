@@ -296,7 +296,7 @@ function autoPlayExerciseMove(ex,line){
   renderCustomBoard(exerciseGame);
   if(exerciseStep>=line.length){
    exerciseCompleted=true;
-   $('exerciseFeedback').textContent='🎉 Exercise completed! '+(ex.success||'Great work!');
+   $('exerciseFeedback').textContent='🎉 Exercise completed!';
    const btn=$('tryExercise');if(btn)btn.style.display='none';
    $('exercisePrompt').textContent='🎉 Exercise completed!';
    saveExerciseAttempt(line.length);
@@ -340,7 +340,7 @@ function makeMove(orig,dest){
   renderCustomBoard(exerciseGame);
   if(exerciseStep>=line.length){
    exerciseCompleted=true;
-   $('exerciseFeedback').textContent='🎉 Exercise completed! '+(ex.success||'Great work!');
+   $('exerciseFeedback').textContent='🎉 Exercise completed!';
    const btn2=$('tryExercise');if(btn2)btn2.style.display='none';
    $('exercisePrompt').textContent='🎉 Exercise completed!';
    saveExerciseAttempt(line.length);
@@ -399,7 +399,7 @@ async function load(){try{
  document.body.classList.toggle('studentMode',!isAdmin);
  $('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';
  $('studyTitle').textContent=study.title;
- $('studyDescription').textContent=study.description||'';
+ $('studyDescription').textContent=/^Imported from Lichess(?::.*)?$/i.test(String(study.description||'').trim())?'':(study.description||'');
  $('shareUrl').value=location.href+'&chapter='+currentChapter;
  $('viewerNotice').classList.toggle('hidden',isAdmin);
  renderChapters();renderStudents();setupBoard();
