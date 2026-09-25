@@ -77,6 +77,24 @@ module.exports=async function(req,res){
   if(!admin)return ok(res,401,{error:'Administrator login required'});
   const b=await body(req);
 
+  // Remove a single study from a single student without changing other students'
+  // assignments or the study chapters.
+  if(req.method==='POST' && b.action==='remove-student'){
+   const i=studies.findIndex(s=>s.id===clean(b.studyId));
+   if(i<0)return ok(res,404,{error:'Study not found'});
+   const studentId=clean(b.studentId);
+   if(!studentId)return ok(res,400,{error:'Student id is required'});
+   const study=safeStudy(studies[i]);
+   const studentIds=(study.studentIds||[]).filter(id=>id!==studentId);
+   const chapterAssignments={...study.chapterAssignments};
+   delete chapterAssignments[studentId];
+   const visibility=studentIds.length?'assigned':'assigned';
+   const item={...studies[i],visibility,studentIds,chapterAssignments,updatedAt:new Date().toISOString()};
+   studies[i]=item;
+   await redis.set(KEY,JSON.stringify(studies));
+   return ok(res,200,{study:safeStudy(item),removed:true,studentId,studyId:item.id});
+  }
+
   // Dedicated assignment write: update only sharing/chapter-access data so a full-study
   // round trip cannot accidentally erase the chapter restriction.
   if(req.method==='POST' && b.action==='assign-chapters'){
