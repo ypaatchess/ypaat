@@ -127,8 +127,8 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </div>
 </section>
 </div>
-<div id="assignModal" class="modalBackdrop hidden" role="dialog" aria-modal="true" aria-labelledby="assignModalTitle"><div class="modalCard"><div class="modalHead"><div><h2 id="assignModalTitle" style="margin:0">Assign students</h2><div id="assignModalStudy" class="muted" style="margin-top:4px"></div></div><button class="btn light" id="closeAssignModal" type="button">Close</button></div><div class="modalBody"><input id="assignStudentSearch" class="search" placeholder="Search students by name, email or mobile" autocomplete="off"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0"><span id="assignSelectionCount" class="muted">0 selected</span><button class="btn light" id="assignSelectVisible" type="button">Select visible</button></div><div id="assignStudentList" class="studentPickerList"></div><div style="margin-top:18px;padding-top:16px;border-top:1px solid #e7e1d6"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>Chapter access</b><div class="muted" style="font-size:12px;margin-top:3px">Apply this chapter selection to all selected students.</div></div><div class="actions"><button class="btn light" id="assignAllChapters" type="button">Select all</button><button class="btn light" id="assignNoChapters" type="button">Clear all</button></div></div><div id="assignChapterList" class="studentPickerList"></div><div id="assignChapterStatus" class="muted" style="margin-top:7px"></div></div></div><div class="modalFoot"><span id="assignStatus" class="muted"></span><div class="actions"><button class="btn light" id="cancelAssign" type="button">Cancel</button><button class="btn" id="saveAssign" type="button">Save assignment</button></div></div></div></div><script>
-let students=[],homework=[],classes=[],allClasses=[],editingStudentId='',editingPageId='',editingHomeworkId='',editingClassId='';
+<div id="assignModal" class="modalBackdrop hidden" role="dialog" aria-modal="true" aria-labelledby="assignModalTitle"><div class="modalCard"><div class="modalHead"><div><h2 id="assignModalTitle" style="margin:0">Assign students</h2><div id="assignModalStudy" class="muted" style="margin-top:4px"></div></div><button class="btn light" id="closeAssignModal" type="button">Close</button></div><div class="modalBody"><input id="assignStudentSearch" class="search" placeholder="Search students by name, email or mobile" autocomplete="off"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0"><span id="assignSelectionCount" class="muted">0 selected</span><button class="btn light" id="assignSelectVisible" type="button">Select visible</button></div><div id="assignStudentList" class="studentPickerList"></div><div style="margin-top:18px;padding-top:16px;border-top:1px solid #e7e1d6"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>Chapter access</b><div class="muted" style="font-size:12px;margin-top:3px">Apply this chapter selection to all selected students.</div></div><div class="actions"><button class="btn light" id="assignAllChapters" type="button">Select all</button><button class="btn light" id="assignNoChapters" type="button">Clear all</button></div></div><div id="assignChapterList" class="studentPickerList"></div><div id="assignChapterStatus" class="muted" style="margin-top:7px"></div></div></div><div class="modalFoot"><span id="assignStatus" class="muted"></span><div class="actions"><button class="btn light" id="cancelAssign" type="button">Cancel</button><button class="btn" id="saveAssign" type="button">Save assignment</button></div></div></div></div><div id="studentStudiesModal" class="modalBackdrop hidden" role="dialog" aria-modal="true" aria-labelledby="studentStudiesTitle"><div class="modalCard"><div class="modalHead"><div><h2 id="studentStudiesTitle" style="margin:0">Assigned studies</h2><div id="studentStudiesMeta" class="muted" style="margin-top:4px"></div></div><button class="btn light" id="closeStudentStudies" type="button">Close</button></div><div class="modalBody"><div id="studentStudiesList"></div></div><div class="modalFoot"><span id="studentStudiesStatus" class="muted"></span><button class="btn light" id="cancelStudentStudies" type="button">Close</button></div></div></div><script>
+let students=[],studies=[],homework=[],classes=[],allClasses=[],editingStudentId='',editingPageId='',editingHomeworkId='',editingClassId='';
 async function api(path,options={}){
  const res=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  let data={};let raw='';
@@ -144,7 +144,8 @@ async function loadStudents(){try{const d=await api('/api/students');students=d.
 function renderStudents(){
  const q=document.getElementById('studentSearch').value.trim().toLowerCase();
  const list=students.filter(s=>[s.name,s.email,s.mobile,s.whatsapp].join(' ').toLowerCase().includes(q));
- document.getElementById('students').innerHTML=list.map(s=>'<div class="item"><div><b>'+esc(s.name)+'</b><div class="studentMeta">'+esc(s.email)+' · '+esc(s.mobile)+'</div><div>'+((s.levels||[]).map(x=>'<span class="pill">'+esc(x)+'</span>').join(''))+'</div></div><div class="actions"><button class="btn light" onclick="editStudent(\''+escAttr(s.id)+'\')">Edit</button><button class="btn danger" onclick="deleteStudent(\''+escAttr(s.id)+'\')">Delete</button></div></div>').join('')||'<p class="muted">No students found.</p>'
+ const studyCountByStudent=Object.fromEntries(students.map(s=>[s.id,studies.filter(x=>(x.studentIds||[]).includes(s.id)).length]));
+ document.getElementById('students').innerHTML=list.map(s=>'<div class="item"><div><b>'+esc(s.name)+'</b><div class="studentMeta">'+esc(s.email)+' · '+esc(s.mobile)+'</div><div>'+((s.levels||[]).map(x=>'<span class="pill">'+esc(x)+'</span>').join(''))+'</div></div><div class="actions"><button class="btn light" onclick="openStudentStudies(\''+escAttr(s.id)+'\')">Studies ('+(studyCountByStudent[s.id]||0)+')</button><button class="btn light" onclick="editStudent(\''+escAttr(s.id)+'\')">Edit</button><button class="btn danger" onclick="deleteStudent(\''+escAttr(s.id)+'\')">Delete</button></div></div>').join('')||'<p class="muted">No students found.</p>'
 }
 function escAttr(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
 function openStudentForm(student){
@@ -291,6 +292,8 @@ async function loadStudies(){
  try{
   const d=await api('/api/studies');
   const list=d.studies||[];
+  studies=list;
+  renderStudents();
   const byId=Object.fromEntries((d.students||[]).map(s=>[s.id,s.name]));
   document.getElementById('studyCount').textContent=list.length;
   document.getElementById('studiesList').innerHTML=list.map(s=>'<div class="item"><div style="display:flex;gap:12px;align-items:flex-start"><input class="studySelect" type="checkbox" value="'+escAttr(s.id)+'" aria-label="Select '+escAttr(s.title)+'"><div><b>'+esc(s.title)+'</b><div class="studentMeta">'+esc(s.description||'')+' · '+(s.chapters||[]).length+' chapters · '+(s.visibility==='public'?'Public':'Assigned')+'</div><div>'+(s.studentIds||[]).map(id=>'<span class="pill">'+esc(byId[id]||'Student')+'</span>').join('')+'</div></div></div><div class="actions"><button class="btn light" onclick="openAssignModal(\''+escAttr(s.id)+'\')">Assign</button><a class="btn light" href="/study.html?id='+encodeURIComponent(s.id)+'">Open</a><button class="btn danger" onclick="deleteStudyAdmin(\''+escAttr(s.id)+'\')">Delete</button></div></div>').join('')||'<p class="muted">No studies yet.</p>';
@@ -302,6 +305,39 @@ async function loadStudies(){
   await loadAttempts();
  }catch(e){document.getElementById('studiesList').textContent=e.message}
 }
+function openStudentStudies(studentId){
+ const student=students.find(s=>s.id===studentId);
+ if(!student)return;
+ const assigned=studies.filter(s=>(s.studentIds||[]).includes(studentId));
+ document.getElementById('studentStudiesTitle').textContent='Assigned studies';
+ document.getElementById('studentStudiesMeta').textContent=student.name+' · '+assigned.length+' stud'+(assigned.length===1?'y':'ies');
+ document.getElementById('studentStudiesStatus').textContent='';
+ document.getElementById('studentStudiesList').innerHTML=assigned.map(s=>{
+   const chapterIds=Array.isArray(s.chapterAssignments?.[studentId])?s.chapterAssignments[studentId]:null;
+   const chapterCount=chapterIds?chapterIds.length:(s.chapters||[]).length;
+   return '<div class="item"><div><b>'+esc(s.title)+'</b><div class="studentMeta">'+chapterCount+' of '+(s.chapters||[]).length+' chapters assigned</div></div><button class="btn danger" onclick="removeStudyFromStudent(\''+escAttr(s.id)+'\',\''+escAttr(studentId)+'\')">Remove</button></div>';
+ }).join('')||'<div class="pickerEmpty">No studies are assigned to this student.</div>';
+ document.getElementById('studentStudiesModal').classList.remove('hidden');
+}
+async function removeStudyFromStudent(studyId,studentId){
+ const student=students.find(s=>s.id===studentId),study=studies.find(s=>s.id===studyId);
+ if(!student||!study)return;
+ if(!confirm('Remove “'+study.title+'” from '+student.name+'?'))return;
+ const status=document.getElementById('studentStudiesStatus');
+ status.textContent='Removing…';
+ try{
+   await api('/api/studies',{method:'POST',body:JSON.stringify({action:'remove-student',studyId,studentId})});
+   const index=studies.findIndex(s=>s.id===studyId);
+   if(index>=0){
+     studies[index].studentIds=(studies[index].studentIds||[]).filter(id=>id!==studentId);
+     if(studies[index].chapterAssignments)delete studies[index].chapterAssignments[studentId];
+   }
+   renderStudents();
+   openStudentStudies(studentId);
+   status.textContent='Study removed.';
+ }catch(e){status.textContent=e.message}
+}
+function closeStudentStudies(){document.getElementById('studentStudiesModal').classList.add('hidden')}
 function selectedStudyIds(){return [...document.querySelectorAll('.studySelect:checked')].map(x=>x.value)}
 function updateStudySelection(){
  const boxes=[...document.querySelectorAll('.studySelect')],ids=selectedStudyIds(),all=document.getElementById('selectAllStudies');
@@ -564,6 +600,9 @@ document.getElementById('assignSelectVisible').onclick=()=>{document.querySelect
 document.getElementById('assignAllChapters').onclick=()=>{const chapters=assigningStudy?.chapters||[];assigningChapterIds=new Set(chapters.map(ch=>ch.id));assigningAllChapters=true;renderAssignChapters()};
 document.getElementById('assignNoChapters').onclick=()=>{assigningChapterIds=new Set();assigningAllChapters=false;renderAssignChapters()};
 document.getElementById('assignModal').addEventListener('click',e=>{if(e.target.id==='assignModal')closeAssignModal()});
+document.getElementById('closeStudentStudies').onclick=closeStudentStudies;
+document.getElementById('cancelStudentStudies').onclick=closeStudentStudies;
+document.getElementById('studentStudiesModal').addEventListener('click',e=>{if(e.target.id==='studentStudiesModal')closeStudentStudies()});
 checkLogin();
 </script>
 </body>
