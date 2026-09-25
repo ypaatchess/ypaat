@@ -89,6 +89,14 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </div>
 <div id="studiesTab" class="card hidden">
 <div class="top"><div><h2>Studies</h2><p class="muted">Create Lichess-style chess studies, chapters and student sharing.</p></div><button class="btn" id="newStudyBtn">+ New Study</button></div>
+<div class="card" style="padding:16px;margin:14px 0 18px;background:#faf9f5">
+<h3 style="margin-top:0">Import from Lichess</h3>
+<p class="muted">Import a public Lichess Study into YPAAT, including its chapters and main line moves. The imported copy is stored in YPAAT Redis and can then be shared with students.</p>
+<form id="lichessImportForm">
+<div class="row"><div><label>Lichess Study URL</label><input id="lichessStudyUrl" type="url" placeholder="https://lichess.org/study/xxxxxxxx" required></div><div><label>YPAAT title</label><input id="lichessStudyTitle" placeholder="Leave blank to use the Lichess study name"></div></div>
+<div class="actions" style="margin-top:12px"><button class="btn gold" type="submit">Import Study</button><span id="lichessImportStatus" class="muted" style="padding:10px 0"></span></div>
+</form>
+</div>
 <div id="studiesList"></div>
 <div style="margin-top:22px;padding-top:18px;border-top:1px solid #e7e1d6">
 <div class="top"><div><h3 style="margin:0">Exercise attempts</h3><p class="muted">Review student training-line completions and retries.</p></div><button class="btn light" id="refreshAttempts">Refresh</button></div>
@@ -278,6 +286,22 @@ async function loadStudies(){
   await loadAttempts();
  }catch(e){document.getElementById('studiesList').textContent=e.message}
 }
+async function importLichessStudy(e){
+ e.preventDefault();
+ const status=document.getElementById('lichessImportStatus');
+ const url=document.getElementById('lichessStudyUrl').value.trim();
+ const titleOverride=document.getElementById('lichessStudyTitle').value.trim();
+ status.textContent='Fetching and importing Lichess study…';
+ try{
+  const d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url})});
+  const title=titleOverride||d.title||('Imported Lichess Study '+d.studyId);
+  const created=await api('/api/studies',{method:'POST',body:JSON.stringify({title,description:'Imported from Lichess: '+url,visibility:'assigned',studentIds:[],chapters:d.chapters||[]})});
+  status.textContent='Imported '+((created.study?.chapters||[]).length)+' chapters.';
+  document.getElementById('lichessImportForm').reset();
+  await loadStudies();
+  if(created.study?.id) window.setTimeout(()=>{location.href='/study.html?id='+encodeURIComponent(created.study.id)},250);
+ }catch(err){status.textContent=err.message}
+}
 async function loadAttempts(){
  try{
   const q=new URLSearchParams();
@@ -298,6 +322,7 @@ async function loadPages(){try{const d=await api('/api/pages');document.getEleme
 function openPageForm(p){const card=document.getElementById('pageFormCard'),f=document.getElementById('pageForm');card.classList.remove('hidden');f.reset();editingPageId=p?.id||'';document.getElementById('formTitle').textContent=p?'Edit Article':'Create New Article';if(p){for(const k of ['title','slug','description','content','status','nav'])f.elements[k].value=p[k]||''}document.getElementById('pageError').textContent='';window.scrollTo({top:card.offsetTop-20,behavior:'smooth'})}
 function closePageForm(){document.getElementById('pageFormCard').classList.add('hidden');editingPageId='';document.getElementById('pageForm').reset()}
 document.getElementById('newStudyBtn').addEventListener('click',()=>location.href='/study.html?new=1');
+document.getElementById('lichessImportForm').addEventListener('submit',importLichessStudy);
 document.getElementById('attemptStudyFilter').addEventListener('change',loadAttempts);
 document.getElementById('attemptStudentFilter').addEventListener('change',loadAttempts);
 document.getElementById('refreshAttempts').addEventListener('click',loadAttempts);
