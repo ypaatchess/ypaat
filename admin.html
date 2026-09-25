@@ -367,12 +367,13 @@ async function importLichessStudy(e){
    const batchId=crypto.randomUUID();
    const parts=[];
    let currentPart='';
-   for(const line of pgn.replace(/^\\uFEFF/,'').split(/\\r?\\n/)){
-    if(/^\\s*\\[Event\\s+/.test(line) && currentPart.trim()){
+   for(const line of pgn.split('\n')){
+    const isEventLine=line.trimStart().startsWith('[Event ');
+    if(isEventLine && currentPart.trim()){
      parts.push(currentPart);
      currentPart='';
     }
-    currentPart+=line+'\\n';
+    currentPart+=line+'\n';
    }
    if(currentPart.trim())parts.push(currentPart);
    const chunks=[];
