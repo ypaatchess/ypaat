@@ -79,6 +79,7 @@ function parseStructuredPgn(game,startFen){
   let pendingNags=[];
   let chapterNote='';
   const byId=new Map();
+  const beforeFenById=new Map();
 
   function addComment(value){
     if(!value)return;
@@ -98,7 +99,7 @@ function parseStructuredPgn(game,startFen){
     if(token.type==='('){
       if(currentId){
         const current=byId.get(currentId);
-        stack.push({fen:currentBeforeFen,parentId:current.parentId});
+        stack.push({resumeFen:chess.fen(),resumeId:currentId});
         chess.load(currentBeforeFen);
         currentId=current.parentId||null;
         currentBeforeFen=chess.fen();
@@ -110,9 +111,9 @@ function parseStructuredPgn(game,startFen){
     if(token.type===')'){
       const state=stack.pop();
       if(state){
-        chess.load(state.fen);
-        currentId=state.parentId||null;
-        currentBeforeFen=state.fen;
+        chess.load(state.resumeFen);
+        currentId=state.resumeId||null;
+        currentBeforeFen=currentId?(beforeFenById.get(currentId)||state.resumeFen):state.resumeFen;
       }
       continue;
     }
@@ -143,6 +144,7 @@ function parseStructuredPgn(game,startFen){
     pendingNags=[];
     moves.push(node);
     byId.set(node.id,node);
+    beforeFenById.set(node.id,beforeFen);
     currentId=node.id;
     currentBeforeFen=beforeFen;
   }
