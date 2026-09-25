@@ -43,8 +43,18 @@ module.exports=async function(req,res){
    const studentIds=[...new Set((Array.isArray(b.studentIds)?b.studentIds:[]).map(clean).filter(Boolean))].filter(id=>students.some(s=>s.id===id));
    if(!title)return ok(res,400,{error:'Study title is required'});
    const now=new Date().toISOString();
+   const imported=Array.isArray(b.chapters)?b.chapters.map(ch=>({
+     id:clean(ch.id)||crypto.randomUUID(),
+     title:clean(ch.title)||'Untitled chapter',
+     startFen:clean(ch.startFen)||'start',
+     notes:String(ch.notes??''),
+     moves:Array.isArray(ch.moves)?ch.moves.map(m=>({from:clean(m.from),to:clean(m.to),promotion:clean(m.promotion)||undefined,san:clean(m.san),comment:String(m.comment??''),parentId:clean(m.parentId)||null,id:clean(m.id)||crypto.randomUUID()})):[],
+     pgn:String(ch.pgn??''),
+     shapesByPly:ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{},
+     exercises:ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{}
+   })).filter(ch=>ch.title||ch.moves.length):[];
    const firstChapter={id:crypto.randomUUID(),title:'Chapter 1',startFen:'start',notes:'',moves:[],shapesByPly:{},exercises:{}};
-   const study={id:crypto.randomUUID(),title,description,visibility,studentIds,chapters:[firstChapter],createdAt:now,updatedAt:now};
+   const study={id:crypto.randomUUID(),title,description,visibility,studentIds,chapters:imported.length?imported:[firstChapter],createdAt:now,updatedAt:now};
    studies.push(study);await redis.set(KEY,JSON.stringify(studies));
    return ok(res,201,{study:safeStudy(study)});
   }
