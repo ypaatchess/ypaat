@@ -290,7 +290,15 @@ function makeMove(orig,dest){
  const g=ex?(exerciseGame||replay(ch).g):replay(ch).g;
  let made=null;
  try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}
- if(!made){if(ex){exerciseGame=null;exerciseStep=0;exerciseAutoPending=false;rebuild()}else rebuild();return}
+ if(!made){
+   if(ex){
+     $('exerciseFeedback').textContent=ex.retry||'Try again.';
+     exerciseWrongMoves++;
+     exerciseWrongEvents.push({step:exerciseStep+1,expected:'legal move',actual:orig+'-'+dest,at:new Date().toISOString()});
+     renderCustomBoard(g);
+   }else rebuild();
+   return
+ }
  if(ex){
    const line=Array.isArray(ex.line)?ex.line:[{san:ex.expectedSan||''}];
    const expectedNode=line[exerciseStep];
@@ -302,7 +310,9 @@ function makeMove(orig,dest){
      exerciseWrongEvents.push({step:exerciseStep+1,expected:expected,actual:actual,at:new Date().toISOString()});
      // Keep the current exercise position. A wrong move must not restart
      // the exercise or move the student back to the origin position.
-     exerciseGame=g;
+     // g contains the rejected move. Rebuild the board from the
+     // position before the student's attempt, without resetting the exercise step.
+     exerciseGame=exerciseGame||replay(ch).g;
      exerciseAutoPending=false;
      renderCustomBoard(exerciseGame);
      return
