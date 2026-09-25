@@ -28,7 +28,7 @@ module.exports = async function(req, res) {
   try {
     return await route.handler(req, res);
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({error: 'Authentication service error'});
+    console.error('Auth error:',e);
+    return res.status(500).json({error: e?.message || 'Authentication service error'});
   }
 };
