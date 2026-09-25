@@ -272,38 +272,82 @@ function renderCustomBoard(g){
  renderDrawings(grid);
  bindDrawings(grid);
 }
+function startExercise(){
+ const ex=exercise();
+ if(!ex)return;
+ const base=replay(chapter()).g;
+ exerciseGame=new Chess(base.fen());
+ exerciseStep=0;
+ exerciseWrongMoves=0;
+ exerciseWrongEvents=[];
+ renderCustomBoard(exerciseGame);
+ $('exerciseFeedback').textContent='Find the coach’s move on the board.';
+}
+function autoPlayExerciseMove(ex,line){
+ if(!exerciseGame||exerciseStep>=line.length)return;
+ const coach=line[exerciseStep];
+ if(!coach)return;
+ try{
+  exerciseGame.move({from:coach.from,to:coach.to,promotion:coach.promotion||'q'});
+  exerciseStep++;
+  renderCustomBoard(exerciseGame);
+  $('exerciseFeedback').textContent=exerciseStep>=line.length
+   ?(ex.success||'Correct — training line complete.')
+   :'Your turn — find the next move.';
+  if(exerciseStep>=line.length)saveExerciseAttempt(line.length);
+ }catch(e){
+  $('exerciseFeedback').textContent='The saved coach line contains an invalid move.';
+ }
+}
 function makeMove(orig,dest){
  const ch=chapter();
  const ex=!isAdmin?exercise():null;
- const g=ex?(exerciseGame||replay(ch).g):replay(ch).g;
+ if(ex){
+  if(!exerciseGame){
+   startExercise();
+   return;
+  }
+  const line=Array.isArray(ex.line)?ex.line:[];
+  if(exerciseStep>=line.length)return;
+  const expectedNode=line[exerciseStep];
+  const attempt=new Chess(exerciseGame.fen());
+  let made=null;
+  try{made=attempt.move({from:orig,to:dest,promotion:'q'})}catch{}
+  if(!made){
+   $('exerciseFeedback').textContent=ex.retry||'Try again.';
+   exerciseWrongMoves++;
+   exerciseWrongEvents.push({step:exerciseStep+1,expected:expectedNode?.san||'',actual:orig+'-'+dest,at:new Date().toISOString()});
+   return;
+  }
+  const expected=(expectedNode?.san||'').replace(/[+#?!]+$/g,'').trim();
+  const actual=(made.san||'').replace(/[+#?!]+$/g,'').trim();
+  if(actual!==expected){
+   $('exerciseFeedback').textContent=ex.retry||'Try again — only the correct move advances the exercise.';
+   exerciseWrongMoves++;
+   exerciseWrongEvents.push({step:exerciseStep+1,expected,actual,at:new Date().toISOString()});
+   return;
+  }
+  exerciseGame=attempt;
+  exerciseStep++;
+  renderCustomBoard(exerciseGame);
+  if(exerciseStep>=line.length){
+   $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
+   saveExerciseAttempt(line.length);
+   return;
+  }
+  // The saved line alternates student and coach moves. After the student's
+  // correct move, automatically play the coach's reply.
+  const coach=line[exerciseStep];
+  if(coach){
+   $('exerciseFeedback').textContent='Correct — coach is responding…';
+   setTimeout(()=>autoPlayExerciseMove(ex,line),500);
+  }
+  return;
+ }
+ const g=replay(ch).g;
  let made=null;
  try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}
- if(!made){if(ex){exerciseGame=null;exerciseStep=0;rebuild()}else rebuild();return}
- if(ex){
-   const line=Array.isArray(ex.line)?ex.line:[{san:ex.expectedSan||''}];
-   const expectedNode=line[exerciseStep];
-   const expected=(expectedNode?.san||'').replace(/[+#?!]+$/g,'').trim();
-   const actual=(made.san||'').replace(/[+#?!]+$/g,'').trim();
-   if(actual!==expected){
-     $('exerciseFeedback').textContent=ex.retry||'Try again.';
-     exerciseWrongMoves++;
-     exerciseWrongEvents.push({step:exerciseStep+1,expected:expected,actual:actual,at:new Date().toISOString()});
-     exerciseGame=null;exerciseStep=0;
-     setTimeout(()=>rebuild(),350);
-     return
-   }
-   exerciseStep++;
-   exerciseGame=g;
-   renderCustomBoard(g);
-   if(exerciseStep>=line.length){
-     $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
-     board.set({movable:{enabled:false}});
-     saveExerciseAttempt(line.length);
-   }else{
-     $('exerciseFeedback').textContent='Correct — now find the next move.';
-   }
-   return
- }
+ if(!made){rebuild();return}
  const parentId=window.selectedNodeId||null;
  const node={id:crypto.randomUUID(),parentId,from:orig,to:dest,promotion:'q',san:made.san,comment:''};
  ch.moves.push(node);window.selectedNodeId=node.id;rebuild()
@@ -359,7 +403,7 @@ $('saveExercise').onclick=()=>{
  renderExercise();$('exerciseStatus').textContent='Training line configured. Save the study to publish it.'
 };
 $('clearExercise').onclick=()=>{const key=exerciseKey();if(chapter().exercises)delete chapter().exercises[key];renderExercise();$('exerciseStatus').textContent='Exercise cleared. Save the study to publish the change.'};
-$('tryExercise').onclick=()=>{const ex=exercise();if(!ex)return;$('exerciseFeedback').textContent='Use the board to play the training line.';$('exerciseFeedback').style.marginTop='8px'};
+$('tryExercise').onclick=()=>{if(!exercise())return;startExercise();};
 $('newChapter').onclick=()=>{study.chapters.push({id:crypto.randomUUID(),title:'Chapter '+(study.chapters.length+1),startFen:'start',notes:'',moves:[],shapesByPly:{}});currentChapter=study.chapters.length-1;window.selectedNodeId=null;currentPly=0;renderChapters();rebuild()};
 $('deleteChapter').onclick=()=>{if(study.chapters.length<2){alert('A study must keep at least one chapter.');return}if(confirm('Delete this chapter?')){study.chapters.splice(currentChapter,1);currentChapter=Math.max(0,currentChapter-1);window.selectedNodeId=null;currentPly=0;renderChapters();rebuild()}};
 $('resetChapter').onclick=()=>{chapter().moves=[];chapter().shapesByPly={};window.selectedNodeId=null;currentPly=0;rebuild()};
