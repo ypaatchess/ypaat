@@ -95,7 +95,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 <form id="lichessImportForm">
 <div class="row"><div><label>Lichess Study URL</label><input id="lichessStudyUrl" type="url" placeholder="https://lichess.org/study/xxxxxxxx"></div><div><label>YPAAT title</label><input id="lichessStudyTitle" placeholder="Leave blank to use the Lichess study name"></div></div>
 <div class="actions" style="margin-top:12px"><button class="btn gold" type="submit">Import Study</button><span id="lichessImportStatus" class="muted" style="padding:10px 0"></span></div>
-<div style="margin-top:14px"><label>Or paste the PGN exported from Lichess</label><textarea id="lichessPgn" placeholder="Lichess → Share & export → PGN → copy, then paste here" style="min-height:140px"></textarea><div class="muted" style="font-size:12px;margin-top:5px">This fallback works when a Lichess study is private/unlisted or Lichess blocks browser/server export. The PGN is parsed by YPAAT and stored in Redis.</div></div>
+<div style="margin-top:14px"><label>Or import a PGN file</label><input id="lichessPgnFile" type="file" accept=".pgn,text/plain,application/x-chess-pgn"><div class="muted" style="font-size:12px;margin-top:5px">Download/export the study as a PGN file from Lichess, then choose it here. The file is parsed by YPAAT and stored in Redis.</div></div>
 </form>
 </div>
 <div id="studiesList"></div>
@@ -292,15 +292,18 @@ async function importLichessStudy(e){
  const status=document.getElementById('lichessImportStatus');
  const url=document.getElementById('lichessStudyUrl').value.trim();
  const titleOverride=document.getElementById('lichessStudyTitle').value.trim();
- const pastedPgn=document.getElementById('lichessPgn').value.trim();
+ const file=document.getElementById('lichessPgnFile').files[0];
  status.textContent='Importing study…';
  try{
   let d;
-  if(pastedPgn){
-   status.textContent='Parsing pasted PGN…';
-   d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn:pastedPgn})});
+  if(file){
+   if(!/\.pgn$/i.test(file.name)) throw new Error('Please choose a PGN file.');
+   status.textContent='Reading PGN file…';
+   const pgn=await file.text();
+   if(!pgn.trim()) throw new Error('The selected PGN file is empty.');
+   d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn})});
   }else{
-   if(!url) throw new Error('Enter a Lichess Study URL or paste its PGN.');
+   if(!url) throw new Error('Enter a Lichess Study URL or choose a PGN file.');
    try{
     d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url})});
    }catch(serverErr){
@@ -310,15 +313,15 @@ async function importLichessStudy(e){
     if(parsed.protocol!=='https:'||parsed.hostname!=='lichess.org'||parts[0]!=='study'||!parts[1]) throw serverErr;
     const exportUrl='https://lichess.org/api/study/'+encodeURIComponent(parts[1])+'.pgn?comments=true&variations=true&clocks=false';
     let lichessRes;
-    try{lichessRes=await fetch(exportUrl)}catch(fetchErr){throw new Error('Lichess could not be fetched by the browser. Paste the PGN from Lichess below to import it.')};
-    if(!lichessRes.ok) throw new Error('Lichess did not allow this study export. Paste the PGN from Lichess below to import it.');
+    try{lichessRes=await fetch(exportUrl)}catch(fetchErr){throw new Error('Lichess could not be fetched by the browser. Download the PGN and choose the file here.')};
+    if(!lichessRes.ok) throw new Error('Lichess did not allow this study export. Download the PGN and choose the file here.');
     const pgn=await lichessRes.text();
-    if(!pgn.trim()) throw new Error('Lichess returned an empty study. Paste the PGN from Lichess below to import it.');
+    if(!pgn.trim()) throw new Error('Lichess returned an empty study. Download the PGN and choose the file here.');
     d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn})});
    }
   }
   const title=titleOverride||d.title||('Imported Lichess Study '+d.studyId);
-  const created=await api('/api/studies',{method:'POST',body:JSON.stringify({title,description:'Imported from Lichess: '+(url||'pasted PGN'),visibility:'assigned',studentIds:[],chapters:d.chapters||[]})});
+  const created=await api('/api/studies',{method:'POST',body:JSON.stringify({title,description:'Imported from Lichess: '+(url||file?.name||'PGN file'),visibility:'assigned',studentIds:[],chapters:d.chapters||[]})});
   status.textContent='Imported '+((created.study?.chapters||[]).length)+' chapters.';
   document.getElementById('lichessImportForm').reset();
   await loadStudies();
