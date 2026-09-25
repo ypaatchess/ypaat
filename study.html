@@ -8,18 +8,18 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/chessground@10.2.0/assets/chessground.cburnett.css">
 <style>
 :root{--ink:#10202a;--muted:#66747d;--cream:#f7f4ed;--paper:#fff;--green:#173f35;--gold:#d9a441;--line:#e7e1d6}
-*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1320px,94%);margin:24px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:800;font-size:20px}.muted{color:var(--muted)}.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.btn.light{background:#eeeae1;color:var(--ink)}.btn.gold{background:var(--gold);color:#17130b}.btn.danger{background:#f5dddd;color:#7d2525}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 35px rgba(16,32,42,.06)}.layout{display:grid;grid-template-columns:minmax(420px,720px) minmax(300px,1fr);gap:18px;align-items:start}.board{width:min(72vw,680px);height:auto;aspect-ratio:1/1;max-width:680px;margin:12px auto;position:relative}.custom-board{width:100%;height:100%;display:grid;position:relative;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:8px solid #5b3a25;border-radius:4px;overflow:hidden;box-shadow:0 12px 28px rgba(16,32,42,.2);user-select:none}.custom-square{position:relative;display:flex;align-items:center;justify-content:center;font-size:clamp(30px,6.5vw,64px);line-height:1;cursor:pointer}.custom-square.light{background:#f0d9b5}.custom-square.dark{background:#b58863}.custom-square.selected{box-shadow:inset 0 0 0 4px #d9a441}.custom-square.last{box-shadow:inset 0 0 0 999px rgba(217,164,65,.18)}.custom-piece{cursor:grab;filter:drop-shadow(0 2px 1px rgba(0,0,0,.28));font-family:"DejaVu Sans",serif}.custom-piece.white{color:#fff;text-shadow:0 1px 1px #333}.custom-piece.black{color:#111;text-shadow:0 1px 1px #eee}.drawingLayer{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}.custom-coord{position:absolute;font-size:10px;font-weight:700;opacity:.65}.custom-file{left:4px;bottom:2px}.custom-rank{right:4px;top:2px}.cg-wrap{width:100%;height:100%}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1320px,94%);margin:24px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:800;font-size:20px}.muted{color:var(--muted)}.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.btn.light{background:#eeeae1;color:var(--ink)}.btn.gold{background:var(--gold);color:#17130b}.btn.danger{background:#f5dddd;color:#7d2525}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 35px rgba(16,32,42,.06)}.layout{display:grid;grid-template-columns:minmax(420px,720px) minmax(300px,1fr);gap:18px;align-items:start}.board{width:min(72vw,680px);height:auto;aspect-ratio:1/1;max-width:680px;margin:12px auto;position:relative}.custom-board{width:100%;height:100%;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:8px solid #5b3a25;border-radius:4px;overflow:hidden;box-shadow:0 12px 28px rgba(16,32,42,.2);user-select:none}.custom-square{position:relative;display:flex;align-items:center;justify-content:center;font-size:clamp(30px,6.5vw,64px);line-height:1;cursor:pointer}.custom-square.light{background:#f0d9b5}.custom-square.dark{background:#b58863}.custom-square.selected{box-shadow:inset 0 0 0 4px #d9a441}.custom-square.last{box-shadow:inset 0 0 0 999px rgba(217,164,65,.18)}.custom-piece{cursor:grab;filter:drop-shadow(0 2px 1px rgba(0,0,0,.28));font-family:"DejaVu Sans",serif}.custom-piece.white{color:#fff;text-shadow:0 1px 1px #333}.custom-piece.black{color:#111;text-shadow:0 1px 1px #eee}.custom-coord{position:absolute;font-size:10px;font-weight:700;opacity:.65}.custom-file{left:4px;bottom:2px}.custom-rank{right:4px;top:2px}.cg-wrap{width:100%;height:100%}
 #board .cg-wrap{width:100%;height:100%;position:relative}
 #board cg-board{background:linear-gradient(45deg,#b58863 25%,#f0d9b5 25%,#f0d9b5 50%,#b58863 50%,#b58863 75%,#f0d9b5 75%);background-size:25% 25%;overflow:hidden}
 #board .cg-wrap piece{position:absolute;width:12.5%;height:12.5%;display:block;z-index:2;font-family:"DejaVu Sans",serif;font-size:clamp(32px,6vw,64px);line-height:1;text-align:center;filter:drop-shadow(0 2px 1px rgba(0,0,0,.25));user-select:none}
 #board .cg-wrap piece::after{display:block;line-height:1.18}
 #board .cg-wrap piece.white.pawn::after{content:"♙"}#board .cg-wrap piece.white.knight::after{content:"♘"}#board .cg-wrap piece.white.bishop::after{content:"♗"}#board .cg-wrap piece.white.rook::after{content:"♖"}#board .cg-wrap piece.white.queen::after{content:"♕"}#board .cg-wrap piece.white.king::after{content:"♔"}
-#board .cg-wrap piece.black.pawn::after{content:"♟"}#board .cg-wrap piece.black.knight::after{content:"♞"}#board .cg-wrap piece.black.bishop::after{content:"♝"}#board .cg-wrap piece.black.rook::after{content:"♜"}#board .cg-wrap piece.black.queen::after{content:"♛"}#board .cg-wrap piece.black.king::after{content:"♚"}.studyHead{display:flex;justify-content:space-between;gap:15px;align-items:start;margin-bottom:15px}.studyHead h1{margin:0 0 4px}.chapterTabs{display:flex;gap:7px;overflow:auto;padding-bottom:8px}.chapterTabs button{white-space:nowrap}.moves{display:flex;flex-wrap:wrap;gap:5px;min-height:42px;max-height:180px;overflow:auto;padding:8px;background:#faf9f5;border-radius:12px}.move{border:0;background:transparent;padding:5px 7px;border-radius:7px;cursor:pointer}.move:hover,.move.active{background:#e7dfcc}.sideGrid{display:grid;gap:14px}.form{display:grid;gap:10px}.form input,.form textarea,.form select{width:100%;padding:10px;border:1px solid #d9d4ca;border-radius:10px;font:inherit}.form textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.studentChecks{display:flex;flex-wrap:wrap;gap:7px}.studentChecks label{padding:8px 10px;border:1px solid var(--line);border-radius:999px}.error{color:#a33}.success{color:#20513d}.hidden{display:none!important}.shareBox{display:flex;gap:8px}.shareBox input{flex:1}.pgn{min-height:130px;font-family:monospace}.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.note{padding:10px;background:#faf9f5;border-radius:10px}.studentOnly{display:none}.studentMode .adminOnly{display:none}.studentMode .studentOnly{display:block}.viewerNotice{padding:10px 12px;background:#edf4ef;border-radius:12px;color:#20513d;font-weight:700}.annotationHint{font-size:12px;color:var(--muted);margin-top:7px}body{background:#e9e7e3}.wrap{width:min(1500px,98%);margin:12px auto}.top{background:#262421;color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:10px}.top .muted{color:#c8c5c1}.brand{font-size:18px}.layout{display:grid;grid-template-columns:260px minmax(520px,760px) 330px;gap:10px;align-items:start}.chapterRail{padding:0!important;overflow:hidden;background:#fff}.railHead{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-bottom:1px solid #ddd8d0;background:#f7f7f6}.iconBtn{border:0;border-radius:6px;background:#d9a441;color:#17130b;font-size:20px;width:32px;height:32px;cursor:pointer}.chapterTabs{display:block;padding:5px 0;max-height:calc(100vh - 190px);overflow:auto}.chapterTabs button{display:block;width:100%;border:0;border-radius:0;text-align:left;background:transparent;color:#3c3a38;padding:9px 13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chapterTabs button:hover{background:#eee}.chapterTabs button.gold{background:#d9a441;color:#17130b}.railFooter{padding:10px;border-top:1px solid #ddd8d0}.studyBoard{min-width:0}.board{width:min(100%,760px);height:auto;aspect-ratio:1/1;margin:0 auto;background:#222;box-shadow:0 4px 14px rgba(0,0,0,.2)}.custom-board{border:0!important;border-radius:2px!important;box-shadow:none!important}.custom-square.light{background:#f0d9b5}.custom-square.dark{background:#b58863}.boardControls{display:flex;justify-content:center;gap:3px;margin-top:7px}.boardBtn{width:52px;height:42px;border:0;border-radius:4px;background:#fff;color:#444;font-size:18px;box-shadow:0 1px 3px rgba(0,0,0,.18);cursor:pointer}.boardBtn:hover{background:#eee}.boardBtn.primary{background:#d9a441;color:#17130b}.moveArea{background:#fff;margin-top:8px;border-radius:5px;padding:10px}.moveToolbar{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px}.moves{max-height:190px;background:#f4f3f2;border-radius:4px;padding:5px;display:flex;flex-wrap:wrap;align-content:flex-start}.move{font-size:14px}.commentBox{margin-top:10px}.commentBox textarea{width:100%;min-height:60px;border:1px solid #d8d4ce;border-radius:5px;padding:8px;font:inherit}.sideGrid{display:grid;gap:10px}.sideGrid .card{border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:13px}.sideGrid h3{margin:0 0 10px}.annotationHint{font-size:11px}.hidden{display:none!important}@media(max-width:1150px){.layout{grid-template-columns:220px minmax(460px,1fr)}.sideGrid{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:800px){.layout{grid-template-columns:1fr}.chapterRail{order:2}.studyBoard{order:1}.sideGrid{order:3;grid-template-columns:1fr}.chapterTabs{max-height:260px}.board{width:min(96vw,680px)}}
+#board .cg-wrap piece.black.pawn::after{content:"♟"}#board .cg-wrap piece.black.knight::after{content:"♞"}#board .cg-wrap piece.black.bishop::after{content:"♝"}#board .cg-wrap piece.black.rook::after{content:"♜"}#board .cg-wrap piece.black.queen::after{content:"♛"}#board .cg-wrap piece.black.king::after{content:"♚"}.studyHead{display:flex;justify-content:space-between;gap:15px;align-items:start;margin-bottom:15px}.studyHead h1{margin:0 0 4px}.chapterTabs{display:flex;gap:7px;overflow:auto;padding-bottom:8px}.chapterTabs button{white-space:nowrap}.moves{display:flex;flex-wrap:wrap;gap:5px;min-height:42px;max-height:180px;overflow:auto;padding:8px;background:#faf9f5;border-radius:12px}.move{border:0;background:transparent;padding:5px 7px;border-radius:7px;cursor:pointer}.move:hover,.move.active{background:#e7dfcc}.sideGrid{display:grid;gap:14px}.form{display:grid;gap:10px}.form input,.form textarea,.form select{width:100%;padding:10px;border:1px solid #d9d4ca;border-radius:10px;font:inherit}.form textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.studentChecks{display:flex;flex-wrap:wrap;gap:7px}.studentChecks label{padding:8px 10px;border:1px solid var(--line);border-radius:999px}.error{color:#a33}.success{color:#20513d}.hidden{display:none!important}.shareBox{display:flex;gap:8px}.shareBox input{flex:1}.pgn{min-height:130px;font-family:monospace}.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.note{padding:10px;background:#faf9f5;border-radius:10px}.studentMode .adminOnly{display:none}.viewerNotice{padding:10px 12px;background:#edf4ef;border-radius:12px;color:#20513d;font-weight:700}.annotationHint{font-size:12px;color:var(--muted);margin-top:7px}body{background:#e9e7e3}.wrap{width:min(1500px,98%);margin:12px auto}.top{background:#262421;color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:10px}.top .muted{color:#c8c5c1}.brand{font-size:18px}.layout{display:grid;grid-template-columns:260px minmax(520px,760px) 330px;gap:10px;align-items:start}.chapterRail{padding:0!important;overflow:hidden;background:#fff}.railHead{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-bottom:1px solid #ddd8d0;background:#f7f7f6}.iconBtn{border:0;border-radius:6px;background:#d9a441;color:#17130b;font-size:20px;width:32px;height:32px;cursor:pointer}.chapterTabs{display:block;padding:5px 0;max-height:calc(100vh - 190px);overflow:auto}.chapterTabs button{display:block;width:100%;border:0;border-radius:0;text-align:left;background:transparent;color:#3c3a38;padding:9px 13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chapterTabs button:hover{background:#eee}.chapterTabs button.gold{background:#d9a441;color:#17130b}.railFooter{padding:10px;border-top:1px solid #ddd8d0}.studyBoard{min-width:0}.board{width:min(100%,760px);height:auto;aspect-ratio:1/1;margin:0 auto;background:#222;box-shadow:0 4px 14px rgba(0,0,0,.2)}.custom-board{border:0!important;border-radius:2px!important;box-shadow:none!important}.custom-square.light{background:#f0d9b5}.custom-square.dark{background:#b58863}.boardControls{display:flex;justify-content:center;gap:3px;margin-top:7px}.boardBtn{width:52px;height:42px;border:0;border-radius:4px;background:#fff;color:#444;font-size:18px;box-shadow:0 1px 3px rgba(0,0,0,.18);cursor:pointer}.boardBtn:hover{background:#eee}.boardBtn.primary{background:#d9a441;color:#17130b}.moveArea{background:#fff;margin-top:8px;border-radius:5px;padding:10px}.moveToolbar{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px}.moves{max-height:190px;background:#f4f3f2;border-radius:4px;padding:5px;display:flex;flex-wrap:wrap;align-content:flex-start}.move{font-size:14px}.commentBox{margin-top:10px}.commentBox textarea{width:100%;min-height:60px;border:1px solid #d8d4ce;border-radius:5px;padding:8px;font:inherit}.sideGrid{display:grid;gap:10px}.sideGrid .card{border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:13px}.sideGrid h3{margin:0 0 10px}.annotationHint{font-size:11px}.hidden{display:none!important}@media(max-width:1150px){.layout{grid-template-columns:220px minmax(460px,1fr)}.sideGrid{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:800px){.layout{grid-template-columns:1fr}.chapterRail{order:2}.studyBoard{order:1}.sideGrid{order:3;grid-template-columns:1fr}.chapterTabs{max-height:260px}.board{width:min(96vw,680px)}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="top"><div><div class="brand">♞ YPAAT Study</div><div id="roleText" class="muted">Loading study…</div></div><div class="toolbar"><a class="btn light adminOnly" href="/admin.html">Admin</a><a class="btn light" href="/student.html">Student portal</a></div></div>
+<div class="top"><div><div class="brand">♞ YPAAT Study</div><div id="roleText" class="muted">Loading study…</div></div><div class="toolbar"><a class="btn light" href="/admin.html">Admin</a><a class="btn light" href="/student.html">Student portal</a></div></div>
 <div id="loading" class="card">Loading…</div>
 <div id="app" class="hidden">
 <div class="studyHead card"><div><h1 id="studyTitle">Study</h1><div id="studyDescription" class="muted"></div></div><div class="adminOnly"><button class="btn gold" id="saveStudy">Save study</button></div></div>
@@ -37,7 +37,7 @@
     <button class="boardBtn" id="firstMove" title="First move">⏮</button>
     <button class="boardBtn" id="prevMove" title="Previous move">◀</button>
     <button class="boardBtn primary" id="nextMove" title="Next move">▶</button>
-    <button class="boardBtn" id="lastMove" title="Last move">⏭</button><button class="boardBtn adminOnly" id="clearDrawings" title="Clear arrows and circles">✕ Draw</button>
+    <button class="boardBtn" id="lastMove" title="Last move">⏭</button>
     <button class="boardBtn adminOnly" id="resetChapter" title="Reset line">↺</button>
   </div>
   <div class="moveArea">
@@ -84,13 +84,9 @@
 <div class="card">
 <h3>Chapter notes</h3><div id="notes" class="note">—</div>
 <div id="viewerNotice" class="viewerNotice hidden">Read-only study shared by YPAAT.</div>
-<div id="studentExerciseCard" class="studentOnly card hidden" style="margin-top:10px">
-<h3 style="margin-top:0">Exercises</h3>
-<div id="studentExerciseList"></div>
-</div>
 <div id="exercisePanel" class="viewerNotice hidden" style="margin-top:10px">
 <div id="exercisePrompt">Training exercise</div>
-<div class="toolbar"><button class="btn gold" id="tryExercise">Start exercise</button></div>
+<div class="toolbar"><button class="btn gold" id="tryExercise">Attempt move</button></div>
 <div id="exerciseFeedback"></div>
 </div>
 </div>
@@ -108,261 +104,48 @@ const params=new URLSearchParams(location.search);let studyId=params.get('id')||
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function chapter(){return study?.chapters?.[currentChapter]}
 function normalizeStudy(){for(const ch of (study?.chapters||[])){ch.moves=Array.isArray(ch.moves)?ch.moves:[];let parent=null;for(const m of ch.moves){m.id=m.id||crypto.randomUUID();m.parentId=m.parentId||parent;parent=m.id}ch.shapesByPly=ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{}}}
-function startGame(ch){
- try{
-  const candidate=ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess();
-  // Some older imported chapters were stored with an empty-board FEN after a
-  // failed PGN parse. Never render a completely blank position as the study start.
-  if(candidate.board().every(row=>row.every(cell=>!cell)))return new Chess();
-  return candidate;
- }catch{return new Chess()}
-}
-function recoverEmptyChapterMoves(ch){
- if(!ch||((Array.isArray(ch.moves))&&ch.moves.length)||!ch.pgn)return false;
- const source=startGame(ch), moves=[], tokens=String(ch.pgn)
-  .replace(/\[[^\]]*\]/g,' ')
-  .replace(/\{[\s\S]*?\}/g,' ')
-  .replace(/;[^\n]*/g,' ');
- // Remove recursive PGN variations for a safe main-line recovery. The original
- // PGN remains stored on the chapter; this only repairs chapters whose move tree
- // was lost by an older importer.
- let depth=0, main='';
- for(let i=0;i<tokens.length;i++){
-  const chx=tokens[i];
-  if(chx==='('){depth++;continue}
-  if(chx===')'){depth=Math.max(0,depth-1);continue}
-  if(depth===0)main+=chx;
- }
- const words=main.split(/\s+/).filter(Boolean);
- let parentId=null;
- for(let word of words){
-  if(/^\d+\.(?:\.\.)?$/.test(word)||/^\.{1,3}$/.test(word)||/^(1-0|0-1|1\/2-1\/2|\*)$/.test(word)||/^\$\d+$/.test(word)||/^(?:!!|!\?|\?!|\?\?|!|\?)$/.test(word))continue;
-  word=word.replace(/(!!|!\?|\?!|\?\?|!|\?)$/,'');
-  if(!word)continue;
-  try{
-   const made=source.move(word,{strict:false});
-   const node={id:crypto.randomUUID(),parentId,from:made.from,to:made.to,promotion:made.promotion||'q',san:made.san,comment:'',nags:[]};
-   moves.push(node);parentId=node.id;
-  }catch{
-   // Ignore non-move PGN tokens rather than losing the whole chapter.
-  }
- }
- if(!moves.length)return false;
- ch.moves=moves;
- return true;
-}
+function startGame(ch){try{return ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess()}catch{return new Chess()}}
 function nodePath(ch,targetId){const by=new Map((ch.moves||[]).map(m=>[m.id,m]));const out=[];let n=targetId?by.get(targetId):null;while(n){out.unshift(n);n=n.parentId?by.get(n.parentId):null}return out}
 function selectedMove(){const ch=chapter();return ch.moves.find(m=>m.id===window.selectedNodeId)||null}
-function exerciseKey(){return activeExerciseKey||window.selectedNodeId||'root'}
+function exerciseKey(){return window.selectedNodeId||'root'}
 function exercise(){return chapter()?.exercises?.[exerciseKey()]||null}
 function childOf(ch,parentId){return (ch.moves||[]).find(m=>(m.parentId||null)===(parentId||null))||null}
 function exerciseLine(ch,startId){const out=[];let n=childOf(ch,startId);while(n){out.push(n);n=childOf(ch,n.id)}return out}
-let activeExerciseKey=null;
-let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false,exerciseAutoPending=false,exerciseCompleted=false;
+let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false;
 function renderExercise(){
  const ex=exercise();
  $('exerciseEnabled').checked=!!ex;
  if(ex){
-  const line=Array.isArray(ex.line)?ex.line:[];
-  $('exerciseMove').value=line.length?(line[0].san||''):(ex.expectedSan||'');
-  $('exerciseSuccess').value=ex.success||'Correct — continue the line.';
-  $('exerciseRetry').value=ex.retry||'Try again.';
-  $('exerciseStatus').textContent=line.length?('Training line: '+line.length+' move'+(line.length===1?'':'s')):'';
+   const line=Array.isArray(ex.line)?ex.line:[];
+   $('exerciseMove').value=line.length?(line[0].san||''):(ex.expectedSan||'');
+   $('exerciseSuccess').value=ex.success||'Correct — continue the line.';
+   $('exerciseRetry').value=ex.retry||'Try again.';
+   $('exerciseStatus').textContent=line.length?('Training line: '+line.length+' move'+(line.length===1?'':'s')):'';
  }else{
-  $('exerciseMove').value='';$('exerciseSuccess').value='Correct — continue the line.';$('exerciseRetry').value='Try again.';$('exerciseStatus').textContent='';
+   $('exerciseMove').value='';$('exerciseSuccess').value='Correct — continue the line.';$('exerciseRetry').value='Try again.';$('exerciseStatus').textContent='';
  }
  $('exercisePanel').classList.toggle('hidden',isAdmin||!ex);
  if(ex)$('exercisePrompt').textContent='Training exercise: play the coach line from this position.';
  $('exerciseFeedback').textContent='';
- renderStudentExercises();
 }
-function renderStudentExercises(){
- const card=$('studentExerciseCard'),list=$('studentExerciseList');
- if(!card||!list)return;
- if(isAdmin){card.classList.add('hidden');return}
- const ch=chapter(),items=Object.entries(ch?.exercises||{});
- if(!items.length){card.classList.add('hidden');list.innerHTML='';return}
- card.classList.remove('hidden');
- list.innerHTML=items.map(([key,ex],i)=>{
-  const start=key==='root'?null:key;
-  const move=start?(ch.moves||[]).find(m=>m.id===start):null;
-  const label=start?'Continue from a coach-selected position':'Start of chapter';
-  return '<button class="btn light" style="width:100%;text-align:left;margin-top:7px" data-exercise-start="'+esc(key)+'">Exercise '+(i+1)+' · '+esc(label)+'</button>';
- }).join('');
- list.querySelectorAll('[data-exercise-start]').forEach(btn=>btn.onclick=()=>{
-  const key=btn.dataset.exerciseStart;
-  activeExerciseKey=key;
-  window.selectedNodeId=key==='root'?null:key;
-  exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];exerciseAutoPending=false;exerciseCompleted=false;
-  rebuild();
-  $('exerciseFeedback').textContent='Find the coach’s move on the board.';
-  $('exercisePanel').classList.remove('hidden');
- });
-}
-function positionMap(ch){
- const map=new Map();
- const children=new Map();
- for(const m of (ch.moves||[])){
-  const p=m.parentId||null;
-  if(!children.has(p))children.set(p,[]);
-  children.get(p).push(m);
- }
- const root=startGame(ch);
- function visit(parentId,parentFen,path){
-  for(const m of (children.get(parentId)||[])){
-   const g=new Chess(parentFen);
-   try{
-    const made=g.move({from:m.from,to:m.to,promotion:m.promotion||'q'});
-    const item={node:m,fen:g.fen(),san:made.san,parentId,depth:path.length+1,path:[...path,m.id]};
-    map.set(m.id,item);
-    visit(m.id,item.fen,item.path);
-   }catch(e){
-    map.set(m.id,{node:m,fen:parentFen,san:m.san||'',parentId,depth:path.length+1,path:[...path,m.id],error:e?.message||'Invalid move'});
-   }
-  }
- }
- visit(null,root.fen(),[]);
- return map;
-}
-function replay(ch){
- const map=positionMap(ch);
- const selected=window.selectedNodeId?map.get(window.selectedNodeId):null;
- const g=selected?new Chess(selected.fen):startGame(ch);
- return {g,path:selected?selected.path:[],map};
-}
+function replay(ch){const g=startGame(ch);const path=nodePath(ch,window.selectedNodeId);const arr=[];for(const m of path){try{const made=g.move({from:m.from,to:m.to,promotion:m.promotion||'q'});arr.push({fen:g.fen(),san:made.san,node:m})}catch{break}}return {g,arr,path}}
 function rebuild(){
  const ch=chapter();const r=replay(ch);game=r.g;currentPly=r.path.length;
- states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen()];
- for(const id of r.path){const p=r.map.get(id);if(p)states.push(p.fen)}
- if(!activeExerciseKey){
-  exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];exerciseAutoPending=false;exerciseCompleted=false;
- }
- renderCustomBoard(activeExerciseKey&&!isAdmin?(exerciseGame||game):game);
+ states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen(),...r.arr.map(x=>x.fen)];
+ exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];
+ renderCustomBoard(game);
  renderMoves();renderFields();renderExercise()
 }
-function moveLabel(m,depth){
- const ply=depth+1;
- const number=Math.ceil(ply/2);
- const prefix=ply%2===1?number+'.':number+'...';
- const nags=Array.isArray(m.nags)&&m.nags.length?' '+m.nags.join(' '):'';
- const note=m.comment?' 💬':'';
- return prefix+' '+(m.san||'')+nags+note;
-}
-function renderMoves(){
- if(!isAdmin&&exercise()){
-  $('moves').innerHTML='<span class="muted">Exercise mode — find the move on the board.</span>';
-  $('moveComment').value='';
-  $('moveAnnotation').style.display='none';
-  return;
- }
- const ch=chapter(),children=new Map();
- for(const m of (ch.moves||[])){const p=m.parentId||null;if(!children.has(p))children.set(p,[]);children.get(p).push(m)}
- let html='';
- function walk(parent,depth){
-  for(const m of (children.get(parent)||[])){
-   html+='<button class="move '+(m.id===window.selectedNodeId?'active':'')+'" style="margin-left:'+Math.min(depth*18,72)+'px" data-node="'+esc(m.id)+'">'+(depth?'↳ ':'')+esc(moveLabel(m,depth))+'</button>';
-   walk(m.id,depth+1);
-  }
- }
- walk(null,0);
- $('moves').innerHTML=html||'<span class="muted">No moves yet. Drag a piece on the board to begin.</span>';
- document.querySelectorAll('[data-node]').forEach(b=>b.onclick=()=>{
-  if(!isAdmin&&activeExerciseKey)return;
-  window.selectedNodeId=b.dataset.node;rebuild()
-});
- const sm=selectedMove();$('moveComment').value=sm?.comment||'';
- const ann=$('moveAnnotation');
- if(sm&&(sm.comment||sm.nags?.length)){
-  ann.style.display='block';
-  ann.innerHTML=(sm.comment?'<div>'+esc(sm.comment).replace(/\n/g,'<br>')+'</div>':'')+(sm.nags?.length?'<div class="annotationHint" style="margin-top:5px">Annotations: '+esc(sm.nags.join(' '))+'</div>':'');
- }else{ann.style.display='none';ann.textContent=''}
-}
-function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(currentChapter,Math.max(0,chs.length-1));const chs0=chs;$('chapters').innerHTML=chs0.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{
- currentChapter=Number(b.dataset.ch);currentPly=0;activeExerciseKey=null;exerciseGame=null;exerciseStep=0;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter='+currentChapter);$('shareUrl').value=location.href;rebuild()})}
+function renderMoves(){const ch=chapter(),by=new Map((ch.moves||[]).map(m=>[m.id,m]));const children=p=>(ch.moves||[]).filter(m=>(m.parentId||null)===(p||null));let html='';function walk(parent,depth){for(const m of children(parent)){const nags=Array.isArray(m.nags)&&m.nags.length?' '+m.nags.join(' '):'';const note=m.comment?' 💬':'';html+='<button class="move '+(m.id===window.selectedNodeId?'active':'')+'" style="margin-left:'+Math.min(depth*14,56)+'px" data-node="'+esc(m.id)+'">'+(depth?'↳ ':'')+esc((m.san||'')+nags)+note+'</button>';walk(m.id,depth+1)}}walk(null,0);$('moves').innerHTML=html||'<span class="muted">No moves yet. Drag a piece on the board to begin.</span>';document.querySelectorAll('[data-node]').forEach(b=>b.onclick=()=>{window.selectedNodeId=b.dataset.node;rebuild()});const sm=selectedMove();$('moveComment').value=sm?.comment||'';const ann=$('moveAnnotation');if(sm&&(sm.comment||sm.nags?.length)){ann.style.display='block';ann.innerHTML=(sm.comment?'<div>'+esc(sm.comment).replace(/\\n/g,'<br>')+'</div>':'')+(sm.nags?.length?'<div class="annotationHint" style="margin-top:5px">Annotations: '+esc(sm.nags.join(' '))+'</div>':'')}else{ann.style.display='none';ann.textContent=''}}
+function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(currentChapter,Math.max(0,chs.length-1));const chs0=chs;$('chapters').innerHTML=chs0.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{currentChapter=Number(b.dataset.ch);currentPly=0;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter='+currentChapter);$('shareUrl').value=location.href;rebuild()})}
 function renderFields(){const ch=chapter();ch.exercises=ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{};if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
 function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
 function setupBoard(){board=null;rebuild()}
-function drawingKey(){return window.selectedNodeId||'root'}
-function drawingColor(e){
- if(e.shiftKey)return 'red';
- if(e.ctrlKey||e.metaKey)return 'blue';
- if(e.altKey)return 'yellow';
- return 'green';
-}
-function getDrawings(){
- const ch=chapter();if(!ch)return[];
- ch.shapesByPly=ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{};
- return Array.isArray(ch.shapesByPly[drawingKey()])?ch.shapesByPly[drawingKey()]:[];
-}
-function setDrawings(items){
- const ch=chapter();if(!ch)return;
- ch.shapesByPly=ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{};
- if(items.length)ch.shapesByPly[drawingKey()]=items;
- else delete ch.shapesByPly[drawingKey()];
-}
-function drawPoint(sq){
- const f=sq.charCodeAt(0)-97,r=8-Number(sq[1]);
- return {x:f*12.5+6.25,y:r*12.5+6.25};
-}
-function renderDrawings(grid){
- const old=grid.querySelector('.drawingLayer');if(old)old.remove();
- const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
- svg.classList.add('drawingLayer');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
- const colors={green:'#629924',red:'#d85050',blue:'#3d7bc4',yellow:'#d6a928'};
- for(const d of getDrawings()){
-  const a=drawPoint(d.from),b=drawPoint(d.to),color=colors[d.color]||colors.green;
-  if(d.type==='circle'){
-   const el=document.createElementNS('http://www.w3.org/2000/svg','circle');el.setAttribute('cx',a.x);el.setAttribute('cy',a.y);el.setAttribute('r','5.1');el.setAttribute('fill','none');el.setAttribute('stroke',color);el.setAttribute('stroke-width','1.5');el.setAttribute('opacity','.82');svg.appendChild(el);
-  }else{
-   const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
-   const p1={x:b.x-ux*3.8-uy*2.2,y:b.y-uy*3.8+ux*2.2},p2={x:b.x-ux*3.8+uy*2.2,y:b.y-uy*3.8-ux*2.2};
-   const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',`M ${a.x} ${a.y} L ${b.x} ${b.y} M ${p1.x} ${p1.y} L ${b.x} ${b.y} L ${p2.x} ${p2.y}`);path.setAttribute('fill','none');path.setAttribute('stroke',color);path.setAttribute('stroke-width','2.5');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');path.setAttribute('opacity','.82');svg.appendChild(path);
-  }
- }
- grid.appendChild(svg);
-}
-function toggleDrawing(from,to,e){
- const items=getDrawings(),color=drawingColor(e),idx=items.findIndex(x=>x.type==='arrow'&&x.from===from&&x.to===to&&x.color===color);
- if(idx>=0)items.splice(idx,1);
- else items.push({type:'arrow',from,to,color});
- setDrawings(items);renderDrawings($('board').querySelector('.custom-board'));
- if(isAdmin)setStatus('Board annotation changed — save the study to keep it.');
-}
-function toggleCircle(sq,e){
- const items=getDrawings(),color=drawingColor(e),idx=items.findIndex(x=>x.type==='circle'&&x.from===sq&&x.color===color);
- if(idx>=0)items.splice(idx,1);
- else items.push({type:'circle',from:sq,to:sq,color});
- setDrawings(items);renderDrawings($('board').querySelector('.custom-board'));
- if(isAdmin)setStatus('Board annotation changed — save the study to keep it.');
-}
-function bindDrawing(grid){
- let start=null,moved=false;
- grid.addEventListener('contextmenu',e=>e.preventDefault());
- grid.addEventListener('pointerdown',e=>{
-  if(e.button!==2)return;
-  const sq=e.target.closest('.custom-square')?.dataset.square;if(!sq)return;
-  e.preventDefault();start=sq;moved=false;grid.setPointerCapture?.(e.pointerId);
- });
- grid.addEventListener('pointermove',e=>{
-  if(start&&e.buttons&2)moved=true;
- });
- grid.addEventListener('pointerup',e=>{
-  if(e.button!==2||!start)return;
-  const end=e.target.closest('.custom-square')?.dataset.square||start;
-  const ev={shiftKey:e.shiftKey,ctrlKey:e.ctrlKey,metaKey:e.metaKey,altKey:e.altKey};
-  if(start===end&&!moved)toggleCircle(start,ev);else if(start!==end)toggleDrawing(start,end,ev);
-  start=null;moved=false;
- });
-}
-function clearDrawings(){
- setDrawings([]);
- const grid=$('board').querySelector('.custom-board');if(grid)renderDrawings(grid);
- if(isAdmin)setStatus('Board annotations cleared — save the study to keep it.');
-}
 function renderCustomBoard(g){
  const root=$('board');if(!root)return;
  const pieceMap={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
  let selected=null;
+ const selectedClass=window.selectedNodeId?'':'';
  root.innerHTML='<div class="custom-board"></div>';
  const grid=root.firstElementChild;
  const rows=g.board();
@@ -376,87 +159,46 @@ function renderCustomBoard(g){
      if(p){
        const piece=document.createElement('span');piece.className='custom-piece '+(p.color==='w'?'white':'black');piece.textContent=p.color==='w'?pieceMap[p.type].toUpperCase().replace('♘','♘').replace('♙','♙').replace('♗','♗').replace('♖','♖').replace('♕','♕').replace('♔','♔') : pieceMap[p.type];
        piece.dataset.square=sq;piece.draggable=isAdmin||!!exercise();
-       piece.addEventListener('dragstart',e=>{if(!(isAdmin||exercise())||(exercise()&&(exerciseAutoPending||exerciseCompleted))){e.preventDefault();return}e.dataTransfer.setData('text/plain',sq);selected=sq;el.classList.add('selected')});
-       piece.addEventListener('click',e=>{e.stopPropagation();if(!(isAdmin||exercise())||(exercise()&&(exerciseAutoPending||exerciseCompleted)))return;if(selected===sq){selected=null;el.classList.remove('selected');return}if(selected){const from=selected;selected=null;makeMove(from,sq)}else{selected=sq;el.classList.add('selected')}});
+       piece.addEventListener('dragstart',e=>{if(!(isAdmin||exercise())){e.preventDefault();return}e.dataTransfer.setData('text/plain',sq);selected=sq;el.classList.add('selected')});
+       piece.addEventListener('click',e=>{e.stopPropagation();if(!(isAdmin||exercise()))return;if(selected===sq){selected=null;el.classList.remove('selected');return}if(selected){const from=selected;selected=null;makeMove(from,sq)}else{selected=sq;el.classList.add('selected')}});
+       el.appendChild(piece);
      }
      el.addEventListener('dragover',e=>{if(isAdmin||exercise())e.preventDefault()});
-     el.addEventListener('drop',e=>{if(!(isAdmin||exercise())||(exercise()&&(exerciseAutoPending||exerciseCompleted)))return;e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(from)makeMove(from,sq)});
+     el.addEventListener('drop',e=>{if(!(isAdmin||exercise()))return;e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(from)makeMove(from,sq)});
+     el.addEventListener('click',()=>{if(!(isAdmin||exercise()))return;if(selected){const from=selected;selected=null;makeMove(from,sq)}});
      grid.appendChild(el);
    }
- }
- renderDrawings(grid);bindDrawing(grid);
-}
-function finishExercise(ex,line){
- exerciseCompleted=true;
- exerciseAutoPending=false;
- $('exerciseFeedback').textContent='🎉 Exercise completed! Great work!';
- saveExerciseAttempt(line.length);
- renderCustomBoard(exerciseGame||game);
-}
-function autoPlayExerciseMove(ex,line){
- if(!exerciseGame||exerciseStep>=line.length){exerciseAutoPending=false;return}
- const move=line[exerciseStep];
- let made=null;
- try{made=exerciseGame.move({from:move.from,to:move.to,promotion:move.promotion||'q'})}catch(e){
-   exerciseAutoPending=false;
-   $('exerciseFeedback').textContent='The exercise line contains an invalid automatic move.';
-   return;
- }
- exerciseStep++;
- renderCustomBoard(exerciseGame);
- if(exerciseStep>=line.length){
-   exerciseAutoPending=false;
-   finishExercise(ex,line);
- }else{
-   exerciseAutoPending=false;
-   $('exerciseFeedback').textContent='Your turn — find the next move.';
  }
 }
 function makeMove(orig,dest){
  const ch=chapter();
  const ex=!isAdmin?exercise():null;
- if(ex&&(exerciseAutoPending||exerciseCompleted))return;
- const base=ex?(exerciseGame||replay(ch).g):replay(ch).g;
- const g=ex?new Chess(base.fen()):base;
+ const g=ex?(exerciseGame||replay(ch).g):replay(ch).g;
  let made=null;
  try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}
- if(!made){
-   if(ex){
-     $('exerciseFeedback').textContent=ex.retry||'Try again.';
-     exerciseWrongMoves++;
-     exerciseWrongEvents.push({step:exerciseStep+1,expected:'legal move',actual:orig+'-'+dest,at:new Date().toISOString()});
-     renderCustomBoard(g);
-   }else rebuild();
-   return
- }
+ if(!made){if(ex){exerciseGame=null;exerciseStep=0;rebuild()}else rebuild();return}
  if(ex){
    const line=Array.isArray(ex.line)?ex.line:[{san:ex.expectedSan||''}];
    const expectedNode=line[exerciseStep];
    const expected=(expectedNode?.san||'').replace(/[+#?!]+$/g,'').trim();
    const actual=(made.san||'').replace(/[+#?!]+$/g,'').trim();
    if(actual!==expected){
-     $('exerciseFeedback').textContent=ex.retry||'Try again — only that move is undone.';
+     $('exerciseFeedback').textContent=ex.retry||'Try again.';
      exerciseWrongMoves++;
      exerciseWrongEvents.push({step:exerciseStep+1,expected:expected,actual:actual,at:new Date().toISOString()});
-     // Keep the current exercise position. A wrong move must not restart
-     // the exercise or move the student back to the origin position.
-     // g contains the rejected move. Rebuild the board from the
-     // position before the student's attempt, without resetting the exercise step.
-     // Keep the saved exercise position untouched; g was a clone.
-     exerciseAutoPending=false;
-     renderCustomBoard(exerciseGame||base);
+     exerciseGame=null;exerciseStep=0;
+     setTimeout(()=>rebuild(),350);
      return
    }
    exerciseStep++;
    exerciseGame=g;
    renderCustomBoard(g);
    if(exerciseStep>=line.length){
-     finishExercise(ex,line);
+     $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
+     board.set({movable:{enabled:false}});
+     saveExerciseAttempt(line.length);
    }else{
-     // The coach's reply (the next move in the saved line) is automatic.
-     exerciseAutoPending=true;
-     $('exerciseFeedback').textContent='Correct — coach is responding…';
-     setTimeout(()=>autoPlayExerciseMove(ex,line),500);
+     $('exerciseFeedback').textContent='Correct — now find the next move.';
    }
    return
  }
@@ -464,26 +206,7 @@ function makeMove(orig,dest){
  const node={id:crypto.randomUUID(),parentId,from:orig,to:dest,promotion:'q',san:made.san,comment:''};
  ch.moves.push(node);window.selectedNodeId=node.id;rebuild()
 }
-function jumpToNode(id){
- if(!isAdmin&&activeExerciseKey)return;
- window.selectedNodeId=id||null;rebuild()
-}
-function jumpFirst(){jumpToNode(null)}
-function jumpPrev(){
- const ch=chapter(),current=window.selectedNodeId||null;
- if(!current){rebuild();return}
- const item=positionMap(ch).get(current);
- jumpToNode(item?.parentId||null);
-}
-function jumpNext(){
- const next=childOf(chapter(),window.selectedNodeId||null);
- if(next)jumpToNode(next.id);
-}
-function jumpLast(){
- const ch=chapter();let current=window.selectedNodeId||null;let next=childOf(ch,current);
- while(next){current=next.id;next=childOf(ch,current)}
- jumpToNode(current);
-}
+function jump(p){const ch=chapter();const path=nodePath(ch,window.selectedNodeId);const target=Math.max(0,Math.min(path.length,p));window.selectedNodeId=target?path[target-1].id:null;rebuild()}
 async function saveExerciseAttempt(lineLength){
  if(isAdmin||exerciseSaving)return;
  exerciseSaving=true;
@@ -495,35 +218,14 @@ async function saveExerciseAttempt(lineLength){
 async function save(){if(!isAdmin)return;study.title=$('editTitle').value.trim();study.description=$('editDescription').value.trim();study.visibility=$('visibility').value;study.studentIds=[...document.querySelectorAll('#studentChecks input:checked')].map(x=>x.value);const ch=chapter();ch.title=$('chapterTitle').value.trim()||'Untitled chapter';ch.startFen=$('chapterFen').value.trim()||'start';ch.notes=$('chapterNotes').value;const d=await api('/api/studies',{method:'PUT',body:JSON.stringify(study)});study=d.study;renderChapters();renderStudents();renderFields();setStatus('Study saved','success')}
 function setStatus(t,c=''){ $('status').textContent=t;$('status').className=c}
 async function load(){try{
- // Resolve the active role before loading the study itself. If a browser still
- // has an admin cookie alongside the student cookie, the explicit student view
- // request must be used from the very first study fetch.
- const sm=await api('/api/auth/student-me').catch(()=>({user:null}));
- isStudent=!!sm.user;
- if(!isStudent){
-   const am=await api('/api/auth/me').catch(()=>({user:null}));
-   isAdmin=!!am.user;
- }
- if(!isAdmin&&!isStudent){location.href='/student.html';return}
-
  let d;
- if(studyId){
-   d=await api('/api/studies?id='+encodeURIComponent(studyId)+(isStudent?'&view=student':''));
- }else{
-   if(!isAdmin){location.href='/student.html';return}
-   d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});
-   studyId=d.study.id;
-   history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0');
- }
- study=d.study;normalizeStudy();let repaired=false;for(const ch of (study.chapters||[]))if(recoverEmptyChapterMoves(ch))repaired=true;students=d.students||[];
- if(repaired&&isAdmin){try{const saved=await api('/api/studies',{method:'PUT',body:JSON.stringify(study)});study=saved.study;normalizeStudy();setStatus('Recovered missing chapter moves from the stored PGN','success')}catch(e){console.warn('Could not save recovered chapter moves',e)}}
- $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href+'&chapter='+currentChapter;$('viewerNotice').classList.add('hidden');renderChapters();renderStudents();setupBoard();
+ if(studyId)d=await api('/api/studies?id='+encodeURIComponent(studyId));
+ else {d=await api('/api/auth/me');if(!d.user){location.href='/admin.html';return}isAdmin=true;d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});studyId=d.study.id;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0')}
+ study=d.study;normalizeStudy();students=d.students||[];if(!isAdmin){const am=await api('/api/auth/me').catch(()=>({user:null}));isAdmin=!!am.user;if(!isAdmin){const sm=await api('/api/auth/student-me');isStudent=!!sm.user}}
+ if(!isAdmin&&!isStudent){location.href='/student.html';return}
+ $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href+'&chapter='+currentChapter;$('viewerNotice').classList.toggle('hidden',isAdmin);renderChapters();renderStudents();setupBoard();
  }catch(e){$('loading').textContent=e.message}}
-$('firstMove').onclick=jumpFirst;
-$('prevMove').onclick=jumpPrev;
-$('nextMove').onclick=jumpNext;
-$('lastMove').onclick=jumpLast;
-$('clearDrawings').onclick=clearDrawings;
+$('firstMove').onclick=()=>jump(0);$('prevMove').onclick=()=>jump(currentPly-1);$('nextMove').onclick=()=>jump(currentPly+1);$('lastMove').onclick=()=>jump(chapter().moves.length);
 $('saveStudy').onclick=save;
 $('saveExercise').onclick=()=>{
  const ch=chapter();ch.exercises=ch.exercises||{};
@@ -539,7 +241,7 @@ $('deleteChapter').onclick=()=>{if(study.chapters.length<2){alert('A study must 
 $('resetChapter').onclick=()=>{chapter().moves=[];chapter().shapesByPly={};window.selectedNodeId=null;currentPly=0;rebuild()};
 $('chapterTitle').oninput=()=>{chapter().title=$('chapterTitle').value;renderChapters()};
 $('chapterNotes').oninput=()=>{$('notes').textContent=$('chapterNotes').value};
-$('moveComment').oninput=()=>{const m=selectedMove();if(m)m.comment=$('moveComment').value};
+$('moveComment').oninput=()=>{const m=chapter().moves[Math.max(0,currentPly-1)];if(m)m.comment=$('moveComment').value};
 $('copyShare').onclick=async()=>{await navigator.clipboard.writeText(location.href);setStatus('Share link copied','success')};
 $('exportPgn').onclick=()=>{const g=startGame(chapter());for(const m of chapter().moves){try{g.move({from:m.from,to:m.to,promotion:m.promotion||'q'})}catch{}}$('pgnBox').value=g.pgn()};
 $('importPgn').onclick=()=>{try{const g=new Chess();g.loadPgn($('pgnBox').value);const hist=g.history({verbose:true});chapter().startFen='start';let parentId=null;chapter().moves=hist.map(m=>{const node={id:crypto.randomUUID(),parentId,from:m.from,to:m.to,promotion:m.promotion||'q',san:m.san,comment:''};parentId=node.id;return node});window.selectedNodeId=parentId;chapter().shapesByPly={};currentPly=chapter().moves.length;rebuild();setStatus('PGN imported','success')}catch(e){setStatus('Invalid PGN: '+e.message)}};
