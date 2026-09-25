@@ -10,7 +10,15 @@ function ok(res,status,data){res.status(status).json(data)}
 function clean(v){return String(v??'').trim()}
 function readBody(req){
   if(req.body&&typeof req.body==='object')return Promise.resolve(req.body);
-  return new Promise((resolve,reject)=>{let raw='';req.on('data',c=>raw+=c);req.on('end',()=>{try{resolve(raw?JSON.parse(raw):{})}catch(e){reject(e)}});req.on('error',reject)});
+  if(typeof req.body==='string'){
+    try{return Promise.resolve(req.body?JSON.parse(req.body):{})}catch(e){return Promise.reject(e)}
+  }
+  return new Promise((resolve,reject)=>{
+    let raw='';
+    req.on('data',chunk=>raw+=chunk);
+    req.on('end',()=>{try{resolve(raw?JSON.parse(raw):{})}catch(e){reject(e)}});
+    req.on('error',reject);
+  });
 }
 function parseLichessStudyUrl(value){
   try{
