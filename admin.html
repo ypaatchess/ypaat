@@ -485,9 +485,10 @@ async function loadAttempts(){
   const names=Object.fromEntries((d.students||[]).map(x=>[x.id,x.name]));
   const titles=Object.fromEntries((d.studies||[]).map(x=>[x.id,x.title]));
   document.getElementById('attemptsList').innerHTML=(d.attempts||[]).map(a=>{
-   const pct=a.lineLength?Math.round((a.completedMoves/a.lineLength)*100):100;
+   const attemptsCount=Math.max(0,Number(a.completedMoves)||0)+Math.max(0,Number(a.wrongMoves)||0);
+   const pct=attemptsCount?Math.round((Math.max(0,Number(a.completedMoves)||0)/attemptsCount)*100):0;
    const mistakes=(a.wrongEvents||[]).map((w,i)=>'<div style="margin-top:5px"><b>Move '+esc(w.step)+':</b> expected <code>'+esc(w.expected)+'</code>, played <code>'+esc(w.actual)+'</code></div>').join('');
-   return '<details class="item"><summary style="cursor:pointer"><b>'+esc(names[a.studentId]||'Student')+'</b> · '+esc(titles[a.studyId]||'Study')+' · '+esc(a.completedAt?new Date(a.completedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'')+' · '+esc(a.completed?'Completed':'Incomplete')+' · '+a.completedMoves+'/'+a.lineLength+' moves · '+a.wrongMoves+' wrong · '+pct+'%</summary><div style="margin-top:10px">'+(mistakes||'<span class="muted">No incorrect moves recorded.</span>')+'</div></details>'
+   return '<details class="item"><summary style="cursor:pointer"><b>'+esc(names[a.studentId]||'Student')+'</b> · '+esc(titles[a.studyId]||'Study')+' · '+esc(a.completedAt?new Date(a.completedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'')+' · '+esc(a.completed?'Completed':'Incomplete')+' · '+a.completedMoves+'/'+a.lineLength+' moves · '+a.wrongMoves+' wrong · '+pct+'% accuracy</summary><div style="margin-top:10px">'+(mistakes||'<span class="muted">No incorrect moves recorded.</span>')+'</div></details>'
   }).join('')||'<p class="muted">No exercise attempts yet.</p>';
  }catch(e){document.getElementById('attemptsList').textContent=e.message}
 }
