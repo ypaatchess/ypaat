@@ -320,12 +320,34 @@ async function saveExerciseAttempt(lineLength){
 async function save(){if(!isAdmin)return;study.title=$('editTitle').value.trim();study.description=$('editDescription').value.trim();study.visibility=$('visibility').value;study.studentIds=[...document.querySelectorAll('#studentChecks input:checked')].map(x=>x.value);const ch=chapter();ch.title=$('chapterTitle').value.trim()||'Untitled chapter';ch.startFen=$('chapterFen').value.trim()||'start';ch.notes=$('chapterNotes').value;const d=await api('/api/studies',{method:'PUT',body:JSON.stringify(study)});study=d.study;renderChapters();renderStudents();renderFields();setStatus('Study saved','success')}
 function setStatus(t,c=''){ $('status').textContent=t;$('status').className=c}
 async function load(){try{
- let d;
- if(studyId)d=await api('/api/studies?id='+encodeURIComponent(studyId));
- else {d=await api('/api/auth/me');if(!d.user){location.href='/admin.html';return}isAdmin=true;d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});studyId=d.study.id;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0')}
- study=d.study;normalizeStudy();students=d.students||[];if(!isAdmin){const am=await api('/api/auth/me').catch(()=>({user:null}));isAdmin=!!am.user;if(!isAdmin){const sm=await api('/api/auth/student-me');isStudent=!!sm.user}}
+ // Resolve the active role before requesting the study. Student sessions take
+ // precedence so an old/admin cookie cannot expose the admin study editor.
+ const sm=await api('/api/auth/student-me').catch(()=>({user:null}));
+ isStudent=!!sm.user;
+ if(!isStudent){
+  const am=await api('/api/auth/me').catch(()=>({user:null}));
+  isAdmin=!!am.user;
+ }
  if(!isAdmin&&!isStudent){location.href='/student.html';return}
- $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href+'&chapter='+currentChapter;$('viewerNotice').classList.toggle('hidden',isAdmin);renderChapters();renderStudents();setupBoard();
+
+ let d;
+ if(studyId){
+  d=await api('/api/studies?id='+encodeURIComponent(studyId)+(isStudent?'&view=student':''));
+ }else{
+  if(!isAdmin){location.href='/student.html';return}
+  d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});
+  studyId=d.study.id;
+  history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0');
+ }
+ study=d.study;normalizeStudy();students=d.students||[];
+ $('loading').classList.add('hidden');$('app').classList.remove('hidden');
+ document.body.classList.toggle('studentMode',!isAdmin);
+ $('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';
+ $('studyTitle').textContent=study.title;
+ $('studyDescription').textContent=study.description||'';
+ $('shareUrl').value=location.href+'&chapter='+currentChapter;
+ $('viewerNotice').classList.toggle('hidden',isAdmin);
+ renderChapters();renderStudents();setupBoard();
  }catch(e){$('loading').textContent=e.message}}
 $('firstMove').onclick=()=>jump(0);$('prevMove').onclick=()=>jump(currentPly-1);$('nextMove').onclick=()=>jump(currentPly+1);$('lastMove').onclick=()=>jump(chapter().moves.length);
 $('saveStudy').onclick=save;
