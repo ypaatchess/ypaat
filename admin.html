@@ -409,10 +409,17 @@ async function importLichessStudy(e){
     const encoder=new TextEncoder();
     const MAX_CHUNK_BYTES=3*1024*1024;
     const batchId=crypto.randomUUID();
-    const parts=pgn.split(/(?=^\\s*\\[Event\\s+)/m).filter(x=>x.trim());
+    const pgnParts=[];
+    let pgnPart='';
+    for(const line of pgn.split('\n')){
+     const isEventLine=line.trimStart().startsWith('[Event ');
+     if(isEventLine&&pgnPart.trim()){pgnParts.push(pgnPart);pgnPart='';}
+     pgnPart+=line+'\n';
+    }
+    if(pgnPart.trim())pgnParts.push(pgnPart);
     const chunks=[];
     let chunk='';
-    for(const part of (parts.length?parts:[pgn])){
+    for(const part of (pgnParts.length?pgnParts:[pgn])){
      const candidate=chunk+part;
      if(chunk&&encoder.encode(candidate).byteLength>MAX_CHUNK_BYTES){chunks.push(chunk);chunk=part}
      else chunk=candidate;
