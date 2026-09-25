@@ -493,7 +493,7 @@ async function saveAssignStudents(){
  try{
   assigningStudy.studentIds=[...assigningSelected];assigningStudy.visibility='assigned';
   await api('/api/studies',{method:'PUT',body:JSON.stringify(assigningStudy)});
-  status.textContent='Saved.';await loadStudies();setTimeout(closeAssignModal,350);
+  status.textContent='Saved.';closeAssignModal();await loadStudies();
  }catch(e){status.textContent=e.message}
  finally{btn.disabled=false}
 }
