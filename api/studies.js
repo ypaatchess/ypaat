@@ -48,7 +48,7 @@ module.exports=async function(req,res){
      notes:String(ch.notes??''),
      moves:Array.isArray(ch.moves)?ch.moves.map(m=>({
        from:clean(m.from),to:clean(m.to),promotion:clean(m.promotion)||undefined,san:clean(m.san),
-       comment:String(m.comment??''),parentId:clean(m.parentId)||null,id:clean(m.id)||crypto.randomUUID()
+       comment:String(m.comment??''),nags:Array.isArray(m.nags)?m.nags.map(clean).filter(Boolean):[],parentId:clean(m.parentId)||null,id:clean(m.id)||crypto.randomUUID()
      })):[],
      pgn:String(ch.pgn??''),
      sourceUrl:clean(ch.sourceUrl),
