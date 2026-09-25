@@ -4,6 +4,10 @@ const crypto=require('crypto');
 
 function ok(res,status,data){res.status(status).json(data)}
 function clean(v){return String(v??'').trim()}
+function readBody(req){
+  if(req.body&&typeof req.body==='object')return Promise.resolve(req.body);
+  return new Promise((resolve,reject)=>{let raw='';req.on('data',c=>raw+=c);req.on('end',()=>{try{resolve(raw?JSON.parse(raw):{})}catch(e){reject(e)}});req.on('error',reject)});
+}
 
 function parseLichessStudyUrl(value){
   try{
@@ -34,7 +38,7 @@ module.exports=async function(req,res){
     const admin=await adminFromRequest(req);
     if(!admin)return ok(res,401,{error:'Administrator login required'});
     if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
-    const raw=req.body&&typeof req.body==='object'?req.body:{};
+    const raw=await readBody(req);
     const url=clean(raw.url);
     const parsed=parseLichessStudyUrl(url);
     if(!parsed)return ok(res,400,{error:'Enter a valid public Lichess study URL such as https://lichess.org/study/xxxxxxxx'});
