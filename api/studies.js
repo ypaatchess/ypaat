@@ -56,7 +56,7 @@ module.exports=async function(req,res){
    if(admin)return ok(res,200,{studies:studies.map(safeStudy),students:students.map(s=>({id:s.id,name:s.name,email:s.email}))});
    // The student portal list should contain only studies explicitly shared with this student.
    // Public studies remain accessible when the student has the direct study link.
-   if(student)return ok(res,200,{studies:studies.filter(s=>(s.visibility!=='public'&&(s.studentIds||[]).includes(student.id))).map(safeStudy)});
+   if(student)return ok(res,200,{studies:studies.filter(s=>(s.visibility!=='public'&&(s.studentIds||[]).includes(student.id))).map(s=>safeStudyForStudent(s,student.id))});
    return ok(res,401,{error:'Login required'});
   }
 
