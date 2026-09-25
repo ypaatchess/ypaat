@@ -396,7 +396,22 @@ async function importLichessStudy(e){
     const pgn=await lichessRes.text();
     if(!pgn.trim()) throw new Error('Lichess returned an empty study. Download the PGN and choose the file here.');
     status.textContent='Parsing and saving the complete Lichess study tree…';
-    d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn,title:titleOverride})});
+    const encoder=new TextEncoder();
+    const MAX_CHUNK_BYTES=3*1024*1024;
+    const batchId=crypto.randomUUID();
+    const parts=pgn.split(/(?=^\\s*\\[Event\\s+)/m).filter(x=>x.trim());
+    const chunks=[];
+    let chunk='';
+    for(const part of (parts.length?parts:[pgn])){
+     const candidate=chunk+part;
+     if(chunk&&encoder.encode(candidate).byteLength>MAX_CHUNK_BYTES){chunks.push(chunk);chunk=part}
+     else chunk=candidate;
+    }
+    if(chunk)chunks.push(chunk);
+    for(let i=0;i<chunks.length;i++){
+     status.textContent=chunks.length===1?'Saving the complete Lichess study tree…':'Uploading PGN part '+(i+1)+' of '+chunks.length+'…';
+     d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn:chunks[i],title:titleOverride,batchId,final:i===chunks.length-1})});
+    }
    }
   }
   const count=d.studyCount||d.studies?.length||0;
