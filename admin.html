@@ -95,7 +95,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 <form id="lichessImportForm">
 <div class="row"><div><label>Lichess Study URL</label><input id="lichessStudyUrl" type="url" placeholder="https://lichess.org/study/xxxxxxxx"></div><div><label>YPAAT title</label><input id="lichessStudyTitle" placeholder="Leave blank to use the Lichess study name"></div></div>
 <div class="actions" style="margin-top:12px"><button class="btn gold" type="submit">Import Study</button><span id="lichessImportStatus" class="muted" style="padding:10px 0"></span></div>
-<div style="margin-top:14px"><label>Or import a PGN file</label><input id="lichessPgnFile" type="file" accept=".pgn,text/plain,application/x-chess-pgn"><div class="muted" style="font-size:12px;margin-top:5px">Download/export the study as a PGN file from Lichess, then choose it here. The file is parsed by YPAAT and stored in Redis.</div></div>
+<div style="margin-top:14px"><label>Or import a PGN file</label><input id="lichessPgnFile" type="file" accept=".pgn,text/plain,application/x-chess-pgn"><div class="muted" style="font-size:12px;margin-top:5px">Download/export a Lichess study PGN here. A multi-study export is split into separate YPAAT studies using each Lichess StudyName + study ID. Small empty chapters are also retried from their ChapterURL.</div></div>
 </form>
 </div>
 <div id="studiesList"></div>
@@ -287,6 +287,38 @@ async function loadStudies(){
   await loadAttempts();
  }catch(e){document.getElementById('studiesList').textContent=e.message}
 }
+async function recoverSmallImport(d,status){
+ const studies=Array.isArray(d?.studies)?d.studies:[];
+ const total=studies.reduce((n,s)=>n+(s.chapters||[]).length,0);
+ // Only auto-recover a small PGN. Large all-studies exports can contain many intentionally
+ // empty chapters, and fetching every chapter would be slow and can hit Lichess rate limits.
+ if(total>5)return d;
+ const targets=[];
+ for(const s of studies)for(const ch of (s.chapters||[])){
+   if(!ch.moves?.length&&ch.sourceUrl)targets.push({study:s,chapter:ch});
+ }
+ for(let i=0;i<targets.length;i++){
+   const {study,chapter}=targets[i];
+   try{
+     status.textContent='Recovering empty chapter '+(i+1)+' of '+targets.length+' from Lichess…';
+     const u=new URL(chapter.sourceUrl);
+     const parts=u.pathname.split('/').filter(Boolean);
+     if(parts[0]!=='study'||!parts[1]||!parts[2])continue;
+     const exportUrl='https://lichess.org/api/study/'+encodeURIComponent(parts[1])+'/'+encodeURIComponent(parts[2])+'.pgn?comments=true&variations=true&clocks=false';
+     const res=await fetch(exportUrl);
+     if(!res.ok)continue;
+     const pgn=await res.text();
+     if(!pgn.trim())continue;
+     const parsed=await api('/api/study-import',{method:'POST',body:JSON.stringify({url:chapter.sourceUrl,pgn})});
+     const replacement=parsed?.studies?.[0]?.chapters?.[0]||parsed?.chapters?.[0];
+     if(replacement&&((replacement.moves||[]).length||replacement.startFen!=='start')){
+       const at=(study.chapters||[]).indexOf(chapter);
+       if(at>=0)study.chapters[at]=replacement;
+     }
+   }catch{}
+ }
+ return d;
+}
 async function importLichessStudy(e){
  e.preventDefault();
  const status=document.getElementById('lichessImportStatus');
@@ -302,6 +334,7 @@ async function importLichessStudy(e){
    const pgn=await file.text();
    if(!pgn.trim()) throw new Error('The selected PGN file is empty.');
    d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn})});
+   d=await recoverSmallImport(d,status);
   }else{
    if(!url) throw new Error('Enter a Lichess Study URL or choose a PGN file.');
    try{
@@ -311,7 +344,9 @@ async function importLichessStudy(e){
     const parsed=new URL(url);
     const parts=parsed.pathname.split('/').filter(Boolean);
     if(parsed.protocol!=='https:'||parsed.hostname!=='lichess.org'||parts[0]!=='study'||!parts[1]) throw serverErr;
-    const exportUrl='https://lichess.org/api/study/'+encodeURIComponent(parts[1])+'.pgn?comments=true&variations=true&clocks=false';
+    const exportUrl=parts[2]
+      ? 'https://lichess.org/api/study/'+encodeURIComponent(parts[1])+'/'+encodeURIComponent(parts[2])+'.pgn?comments=true&variations=true&clocks=false'
+      : 'https://lichess.org/api/study/'+encodeURIComponent(parts[1])+'.pgn?comments=true&variations=true&clocks=false';
     let lichessRes;
     try{lichessRes=await fetch(exportUrl)}catch(fetchErr){throw new Error('Lichess could not be fetched by the browser. Download the PGN and choose the file here.')};
     if(!lichessRes.ok) throw new Error('Lichess did not allow this study export. Download the PGN and choose the file here.');
@@ -320,12 +355,24 @@ async function importLichessStudy(e){
     d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn})});
    }
   }
-  const title=titleOverride||d.title||('Imported Lichess Study '+d.studyId);
-  const created=await api('/api/studies',{method:'POST',body:JSON.stringify({title,description:'Imported from Lichess: '+(url||file?.name||'PGN file'),visibility:'assigned',studentIds:[],chapters:d.chapters||[]})});
-  status.textContent='Imported '+((created.study?.chapters||[]).length)+' chapters.';
+  const imported=Array.isArray(d?.studies)&&d.studies.length?d.studies:[{title:d?.title||('Imported Lichess Study '+(d?.studyId||'')),description:d?.description||'',chapters:d?.chapters||[]}];
+  if(!imported.length)throw new Error('No studies were found in the PGN.');
+  const payload=imported.map((s,i)=>({
+    title:titleOverride&&imported.length===1?titleOverride:(s.title||'Imported Lichess Study '+(i+1)),
+    description:'Imported from Lichess: '+(url||file?.name||'PGN file'),
+    visibility:'assigned',
+    studentIds:[],
+    chapters:s.chapters||[]
+  }));
+  status.textContent='Saving '+payload.length+' stud'+(payload.length===1?'y':'ies')+' to Redis…';
+  const created=await api('/api/studies',{method:'POST',body:JSON.stringify({studies:payload})});
+  const count=created.studies?.length||0;
+  const chapters=payload.reduce((n,s)=>n+s.chapters.length,0);
+  const empty=payload.reduce((n,s)=>n+s.chapters.filter(c=>!(c.moves||[]).length).length,0);
+  status.textContent='Imported '+count+' studies · '+chapters+' chapters'+(empty?' · '+empty+' chapters have no moves in the supplied PGN':'')+'.';
   document.getElementById('lichessImportForm').reset();
   await loadStudies();
-  if(created.study?.id) window.setTimeout(()=>{location.href='/study.html?id='+encodeURIComponent(created.study.id)},250);
+  if(count===1&&created.studies?.[0]?.id) window.setTimeout(()=>{location.href='/study.html?id='+encodeURIComponent(created.studies[0].id)},250);
  }catch(err){
   status.textContent=err.message;
  }
