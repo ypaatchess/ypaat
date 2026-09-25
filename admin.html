@@ -298,9 +298,9 @@ async function loadStudies(){
 }
 function selectedStudyIds(){return [...document.querySelectorAll('.studySelect:checked')].map(x=>x.value)}
 function updateStudySelection(){
- const boxes=[...document.querySelectorAll('.studySelect')],ids=selectedStudyIds(),all=$('selectAllStudies');
- $('studySelectionCount').textContent=ids.length+' selected';
- $('deleteSelectedStudies').disabled=!ids.length;
+ const boxes=[...document.querySelectorAll('.studySelect')],ids=selectedStudyIds(),all=document.getElementById('selectAllStudies');
+ document.getElementById('studySelectionCount').textContent=ids.length+' selected';
+ document.getElementById('deleteSelectedStudies').disabled=!ids.length;
  all.checked=!!boxes.length&&ids.length===boxes.length;
  all.indeterminate=ids.length>0&&ids.length<boxes.length;
 }
@@ -311,7 +311,7 @@ async function deleteSelectedStudies(){
  try{
    const d=await api('/api/studies',{method:'DELETE',body:JSON.stringify({ids})});
    await loadStudies();
-   $('lichessImportStatus').textContent='Deleted '+(d.deleted||ids.length)+' stud'+((d.deleted||ids.length)===1?'y':'ies')+'.';
+   document.getElementById('lichessImportStatus').textContent='Deleted '+(d.deleted||ids.length)+' stud'+((d.deleted||ids.length)===1?'y':'ies')+'.';
  }catch(e){alert(e.message)}
 }
 
