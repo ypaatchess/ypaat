@@ -8,9 +8,32 @@ const STUDENTS_KEY='ypaat:students';
 function body(req){return new Promise((resolve,reject)=>{let raw='';req.on('data',c=>raw+=c);req.on('end',()=>{try{resolve(raw?JSON.parse(raw):{})}catch(e){reject(e)}});req.on('error',reject)})}
 function ok(res,status,data){res.status(status).json(data)}
 function clean(v){return String(v??'').trim()}
+function normalizeChapterAssignments(value,studentIds,chapters){
+ const out={};
+ const allowed=new Set(chapters.map(ch=>ch.id));
+ if(value&&typeof value==='object'){
+  for(const id of studentIds){
+   if(Array.isArray(value[id])){
+    const ids=[...new Set(value[id].map(clean).filter(x=>allowed.has(x)))];
+    if(ids.length)out[id]=ids;
+   }
+  }
+ }
+ return out;
+}
+
 async function load(redis,key){const raw=await redis.get(key);if(!raw)return [];try{const x=JSON.parse(raw);return Array.isArray(x)?x:[]}catch{return []}}
-function safeStudy(s){return {...s,studentIds:Array.isArray(s.studentIds)?s.studentIds:[],chapters:Array.isArray(s.chapters)?s.chapters:[]}}
+function safeStudy(s){return {...s,studentIds:Array.isArray(s.studentIds)?s.studentIds:[],chapterAssignments:s.chapterAssignments&&typeof s.chapterAssignments==='object'?s.chapterAssignments:{},chapters:Array.isArray(s.chapters)?s.chapters:[]}}
 function canStudentView(study,id){return study.visibility==='public'||(study.studentIds||[]).includes(id)}
+function safeStudyForStudent(s,id){
+ const study=safeStudy(s);
+ const assigned=study.chapterAssignments?.[id];
+ if(Array.isArray(assigned)){
+  const allowed=new Set(assigned);
+  study.chapters=study.chapters.filter(ch=>allowed.has(ch.id));
+ }
+ return study;
+}
 
 module.exports=async function(req,res){
  res.setHeader('Cache-Control','no-store, max-age=0');
@@ -28,7 +51,7 @@ module.exports=async function(req,res){
     if(!study)return ok(res,404,{error:'Study not found'});
     if(!admin&&!student)return ok(res,401,{error:'Login required'});
     if(!admin&&!canStudentView(study,student.id))return ok(res,403,{error:'You do not have access to this study'});
-    return ok(res,200,{study:safeStudy(study),students:admin?students.map(s=>({id:s.id,name:s.name,email:s.email})):[]});
+    return ok(res,200,{study:admin?safeStudy(study):safeStudyForStudent(study,student.id),students:admin?students.map(s=>({id:s.id,name:s.name,email:s.email})):[]});
    }
    if(admin)return ok(res,200,{studies:studies.map(safeStudy),students:students.map(s=>({id:s.id,name:s.name,email:s.email}))});
    // The student portal list should contain only studies explicitly shared with this student.
@@ -68,7 +91,8 @@ module.exports=async function(req,res){
        const studentIds=[...new Set((Array.isArray(spec.studentIds)?spec.studentIds:(Array.isArray(b.studentIds)?b.studentIds:[])).map(clean).filter(Boolean))].filter(id=>students.some(s=>s.id===id));
        const imported=normalizeChapters(spec.chapters);
        const firstChapter={id:crypto.randomUUID(),title:'Chapter 1',startFen:'start',notes:'',moves:[],shapesByPly:{},exercises:{}};
-       return {id:crypto.randomUUID(),title:title||'Imported YPAAT Study',description,visibility,studentIds,chapters:imported.length?imported:[firstChapter],createdAt:now,updatedAt:now};
+       const chapters=imported.length?imported:[firstChapter];
+       return {id:crypto.randomUUID(),title:title||'Imported YPAAT Study',description,visibility,studentIds,chapterAssignments:normalizeChapterAssignments(spec.chapterAssignments||b.chapterAssignments,studentIds,chapters),chapters,createdAt:now,updatedAt:now};
      });
      studies.push(...created);await redis.set(KEY,JSON.stringify(studies));
      return ok(res,201,{studies:created.map(s=>({id:s.id,title:s.title,description:s.description,visibility:s.visibility,chapterCount:s.chapters.length}))});
@@ -81,7 +105,8 @@ module.exports=async function(req,res){
    const now=new Date().toISOString();
    const imported=normalizeChapters(b.chapters);
    const firstChapter={id:crypto.randomUUID(),title:'Chapter 1',startFen:'start',notes:'',moves:[],shapesByPly:{},exercises:{}};
-   const study={id:crypto.randomUUID(),title,description,visibility,studentIds,chapters:imported.length?imported:[firstChapter],createdAt:now,updatedAt:now};
+   const chapters=imported.length?imported:[firstChapter];
+   const study={id:crypto.randomUUID(),title,description,visibility,studentIds,chapterAssignments:normalizeChapterAssignments(b.chapterAssignments,studentIds,chapters),chapters,createdAt:now,updatedAt:now};
    studies.push(study);await redis.set(KEY,JSON.stringify(studies));
    return ok(res,201,{study:safeStudy(study)});
   }
@@ -107,7 +132,8 @@ module.exports=async function(req,res){
      shapesByPly:ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{},
      exercises:ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{}
    })):studies[i].chapters;
-   const item={...studies[i],title,description,visibility,studentIds,chapters,updatedAt:new Date().toISOString()};
+   const chapterAssignments=normalizeChapterAssignments(b.chapterAssignments,studentIds,chapters);
+   const item={...studies[i],title,description,visibility,studentIds,chapterAssignments,chapters,updatedAt:new Date().toISOString()};
    studies[i]=item;await redis.set(KEY,JSON.stringify(studies));
    return ok(res,200,{study:safeStudy(item)});
   }
