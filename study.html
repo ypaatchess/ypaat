@@ -111,7 +111,7 @@ function exerciseKey(){return window.selectedNodeId||'root'}
 function exercise(){return chapter()?.exercises?.[exerciseKey()]||null}
 function childOf(ch,parentId){return (ch.moves||[]).find(m=>(m.parentId||null)===(parentId||null))||null}
 function exerciseLine(ch,startId){const out=[];let n=childOf(ch,startId);while(n){out.push(n);n=childOf(ch,n.id)}return out}
-let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false;
+let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false,exerciseCompleted=false;
 function renderExercise(){
  const ex=exercise();
  $('exerciseEnabled').checked=!!ex;
@@ -280,6 +280,7 @@ function startExercise(){
  exerciseStep=0;
  exerciseWrongMoves=0;
  exerciseWrongEvents=[];
+ exerciseCompleted=false;
  renderCustomBoard(exerciseGame);
  $('exerciseFeedback').textContent='Find the coach’s move on the board.';
 }
@@ -291,10 +292,13 @@ function autoPlayExerciseMove(ex,line){
   exerciseGame.move({from:coach.from,to:coach.to,promotion:coach.promotion||'q'});
   exerciseStep++;
   renderCustomBoard(exerciseGame);
-  $('exerciseFeedback').textContent=exerciseStep>=line.length
-   ?(ex.success||'Correct — training line complete.')
-   :'Your turn — find the next move.';
-  if(exerciseStep>=line.length)saveExerciseAttempt(line.length);
+  if(exerciseStep>=line.length){
+   exerciseCompleted=true;
+   $('exerciseFeedback').textContent='🎉 Exercise completed! '+(ex.success||'Great work!');
+   saveExerciseAttempt(line.length);
+  }else{
+   $('exerciseFeedback').textContent='Your turn — find the next move.';
+  }
  }catch(e){
   $('exerciseFeedback').textContent='The saved coach line contains an invalid move.';
  }
@@ -331,7 +335,8 @@ function makeMove(orig,dest){
   exerciseStep++;
   renderCustomBoard(exerciseGame);
   if(exerciseStep>=line.length){
-   $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
+   exerciseCompleted=true;
+   $('exerciseFeedback').textContent='🎉 Exercise completed! '+(ex.success||'Great work!');
    saveExerciseAttempt(line.length);
    return;
   }
