@@ -206,7 +206,26 @@ function makeMove(orig,dest){
  const node={id:crypto.randomUUID(),parentId,from:orig,to:dest,promotion:'q',san:made.san,comment:''};
  ch.moves.push(node);window.selectedNodeId=node.id;rebuild()
 }
-function jump(p){const ch=chapter();const path=nodePath(ch,window.selectedNodeId);const target=Math.max(0,Math.min(path.length,p));window.selectedNodeId=target?path[target-1].id:null;rebuild()}
+function jumpToNode(id){window.selectedNodeId=id||null;rebuild()}
+function jumpFirst(){jumpToNode(null)}
+function jumpPrev(){
+ const ch=chapter(),current=window.selectedNodeId||null;
+ if(!current){rebuild();return}
+ const node=(ch.moves||[]).find(m=>m.id===current);
+ jumpToNode(node?.parentId||null);
+}
+function jumpNext(){
+ const ch=chapter(),current=window.selectedNodeId||null;
+ const next=childOf(ch,current);
+ if(next)jumpToNode(next.id);
+}
+function jumpLast(){
+ const ch=chapter();
+ let current=window.selectedNodeId||null;
+ let next=childOf(ch,current);
+ while(next){current=next.id;next=childOf(ch,current)}
+ jumpToNode(current);
+}
 async function saveExerciseAttempt(lineLength){
  if(isAdmin||exerciseSaving)return;
  exerciseSaving=true;
@@ -225,7 +244,10 @@ async function load(){try{
  if(!isAdmin&&!isStudent){location.href='/student.html';return}
  $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href+'&chapter='+currentChapter;$('viewerNotice').classList.toggle('hidden',isAdmin);renderChapters();renderStudents();setupBoard();
  }catch(e){$('loading').textContent=e.message}}
-$('firstMove').onclick=()=>jump(0);$('prevMove').onclick=()=>jump(currentPly-1);$('nextMove').onclick=()=>jump(currentPly+1);$('lastMove').onclick=()=>jump(chapter().moves.length);
+$('firstMove').onclick=jumpFirst;
+$('prevMove').onclick=jumpPrev;
+$('nextMove').onclick=jumpNext;
+$('lastMove').onclick=jumpLast;
 $('saveStudy').onclick=save;
 $('saveExercise').onclick=()=>{
  const ch=chapter();ch.exercises=ch.exercises||{};
