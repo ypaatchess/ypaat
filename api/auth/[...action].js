@@ -1,9 +1,17 @@
 const {login, me, logout, studentLogin, studentMe, studentLogout} = require('../../lib/auth');
 
-module.exports = async function(req, res) {
-  const rawAction = req.query?.action;
-  const action = Array.isArray(rawAction) ? rawAction[rawAction.length - 1] : rawAction;
+function getAction(req) {
+  const raw = req.query?.action;
+  if (Array.isArray(raw) && raw.length) return raw[raw.length - 1];
+  if (typeof raw === 'string' && raw) return raw;
 
+  const path = String(req.url || '').split('?')[0];
+  const match = path.match(/^\/api\/auth\/([^/]+)\/?$/);
+  return match ? match[1] : '';
+}
+
+module.exports = async function(req, res) {
+  const action = getAction(req);
   const routes = {
     login: {method: 'POST', handler: login},
     me: {method: 'GET', handler: me},
