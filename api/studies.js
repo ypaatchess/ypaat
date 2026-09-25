@@ -110,9 +110,14 @@ module.exports=async function(req,res){
   }
 
   if(req.method==='DELETE'){
-   const next=studies.filter(s=>s.id!==b.id);
-   if(next.length===studies.length)return ok(res,404,{error:'Study not found'});
-   await redis.set(KEY,JSON.stringify(next));return ok(res,200,{ok:true});
+   const ids=Array.isArray(b.ids)?[...new Set(b.ids.map(clean).filter(Boolean))]:(clean(b.id)?[clean(b.id)]:[]);
+   if(!ids.length)return ok(res,400,{error:'Study id(s) required'});
+   const idSet=new Set(ids);
+   const next=studies.filter(s=>!idSet.has(s.id));
+   const deleted=studies.length-next.length;
+   if(!deleted)return ok(res,404,{error:'Study not found'});
+   await redis.set(KEY,JSON.stringify(next));
+   return ok(res,200,{ok:true,deleted});
   }
   return res.status(405).json({error:'Method not allowed'});
  }catch(e){console.error(e);return res.status(500).json({error:'Study service error'})}
