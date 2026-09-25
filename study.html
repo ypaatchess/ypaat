@@ -291,11 +291,14 @@ function makeMove(orig,dest){
    const expected=(expectedNode?.san||'').replace(/[+#?!]+$/g,'').trim();
    const actual=(made.san||'').replace(/[+#?!]+$/g,'').trim();
    if(actual!==expected){
-     $('exerciseFeedback').textContent=ex.retry||'Try again.';
+     $('exerciseFeedback').textContent=ex.retry||'Try again — only that move is undone.';
      exerciseWrongMoves++;
      exerciseWrongEvents.push({step:exerciseStep+1,expected:expected,actual:actual,at:new Date().toISOString()});
-     exerciseGame=null;exerciseStep=0;exerciseAutoPending=false;
-     setTimeout(()=>rebuild(),350);
+     // Keep the current exercise position. A wrong move must not restart
+     // the exercise or move the student back to the origin position.
+     exerciseGame=g;
+     exerciseAutoPending=false;
+     renderCustomBoard(exerciseGame);
      return
    }
    exerciseStep++;
