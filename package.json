@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "redis": "^5.8.2"
+    "redis": "^5.8.2",
+    "chess.js": "^1.4.0"
   }
 }
