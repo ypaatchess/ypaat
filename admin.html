@@ -293,7 +293,21 @@ async function importLichessStudy(e){
  const titleOverride=document.getElementById('lichessStudyTitle').value.trim();
  status.textContent='Fetching and importing Lichess study…';
  try{
-  const d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url})});
+  let d;
+  try{
+   d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url})});
+  }catch(serverErr){
+   status.textContent='Server export unavailable — trying Lichess directly from your browser…';
+   const parsed=new URL(url);
+   const parts=parsed.pathname.split('/').filter(Boolean);
+   if(parsed.protocol!=='https:'||parsed.hostname!=='lichess.org'||parts[0]!=='study'||!parts[1]) throw serverErr;
+   const exportUrl='https://lichess.org/api/study/'+encodeURIComponent(parts[1])+'.pgn?comments=true&variations=true&clocks=false';
+   const lichessRes=await fetch(exportUrl,{headers:{Accept:'application/x-chess-pgn'}});
+   if(!lichessRes.ok) throw new Error('Lichess did not allow this study export. Make sure the study is public (not private/unlisted).');
+   const pgn=await lichessRes.text();
+   if(!pgn.trim()) throw new Error('Lichess returned an empty study.');
+   d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn})});
+  }
   const title=titleOverride||d.title||('Imported Lichess Study '+d.studyId);
   const created=await api('/api/studies',{method:'POST',body:JSON.stringify({title,description:'Imported from Lichess: '+url,visibility:'assigned',studentIds:[],chapters:d.chapters||[]})});
   status.textContent='Imported '+((created.study?.chapters||[]).length)+' chapters.';
