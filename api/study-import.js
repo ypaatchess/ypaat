@@ -1,6 +1,9 @@
 const {adminFromRequest}=require('../lib/auth');
+const {getRedis}=require('../lib/store');
 const {Chess}=require('chess.js');
 const crypto=require('crypto');
+
+const STUDIES_KEY='ypaat:studies';
 
 function ok(res,status,data){res.status(status).json(data)}
 function clean(v){return String(v??'').trim()}
@@ -182,6 +185,54 @@ function parseChapter(game,index){
     exercises:{}
   };
 }
+async function saveImportedStudies(parsed,titleOverride,sourceLabel){
+  const redis=await getRedis();
+  let raw=await redis.get(STUDIES_KEY);
+  let existing=[];
+  try{const value=raw?JSON.parse(raw):[];existing=Array.isArray(value)?value:[]}catch{}
+  const now=new Date().toISOString();
+  const imported=Array.isArray(parsed.studies)?parsed.studies:[];
+  if(!imported.length)throw new Error('No studies were found in the supplied PGN.');
+  const created=imported.map((s,i)=>{
+    const title=titleOverride&&imported.length===1?titleOverride:(s.title||'Imported Lichess Study '+(i+1));
+    const chapters=(s.chapters||[]).map(ch=>({
+      id:clean(ch.id)||crypto.randomUUID(),
+      title:clean(ch.title)||'Untitled chapter',
+      startFen:clean(ch.startFen)||'start',
+      notes:String(ch.notes??''),
+      moves:Array.isArray(ch.moves)?ch.moves.map(m=>({
+        id:clean(m.id)||crypto.randomUUID(),
+        parentId:clean(m.parentId)||null,
+        from:clean(m.from),to:clean(m.to),
+        promotion:clean(m.promotion)||undefined,
+        san:clean(m.san),
+        comment:String(m.comment??''),
+        nags:Array.isArray(m.nags)?m.nags.map(clean).filter(Boolean):[]
+      })):[],
+      pgn:String(ch.pgn??''),
+      sourceUrl:clean(ch.sourceUrl),
+      sourceStudyId:clean(ch.sourceStudyId),
+      sourceChapterId:clean(ch.sourceChapterId),
+      parseError:clean(ch.parseError),
+      shapesByPly:ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{},
+      exercises:ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{}
+    }));
+    return {
+      id:crypto.randomUUID(),
+      title,
+      description:'Imported from Lichess'+(sourceLabel?': '+sourceLabel:''),
+      visibility:'assigned',
+      studentIds:[],
+      chapters,
+      createdAt:now,
+      updatedAt:now
+    };
+  });
+  existing.push(...created);
+  await redis.set(STUDIES_KEY,JSON.stringify(existing));
+  return created;
+}
+
 function parsePgn(pgn,sourceId){
   const games=splitGames(pgn);
   const chapters=games.map(parseChapter);
@@ -217,7 +268,11 @@ module.exports=async function(req,res){
     const suppliedPgn=clean(raw.pgn);
     if(suppliedPgn){
       const parsed=parseLichessStudyUrl(clean(raw.url));
-      return ok(res,200,parsePgn(suppliedPgn,parsed?.studyId||'lichess'));
+      const result=parsePgn(suppliedPgn,parsed?.studyId||'lichess');
+      const created=await saveImportedStudies(result,clean(raw.title),clean(raw.url)||'PGN file');
+      const chapters=created.reduce((n,s)=>n+(s.chapters||[]).length,0);
+      const empty=created.reduce((n,s)=>n+(s.chapters||[]).filter(ch=>!(ch.moves||[]).length).length,0);
+      return ok(res,201,{ok:true,studies:created.map(s=>({id:s.id,title:s.title,chapterCount:s.chapters.length})),studyCount:created.length,chapterCount:chapters,emptyChapterCount:empty});
     }
     const url=clean(raw.url);
     const parsed=parseLichessStudyUrl(url);
@@ -236,7 +291,11 @@ module.exports=async function(req,res){
     }
     const pgn=await response.text();
     if(!pgn.trim())return ok(res,400,{error:'Lichess returned an empty study/chapter.'});
-    return ok(res,200,parsePgn(pgn,parsed.studyId));
+    const result=parsePgn(pgn,parsed.studyId);
+    const created=await saveImportedStudies(result,clean(raw.title),url);
+    const chapters=created.reduce((n,s)=>n+(s.chapters||[]).length,0);
+    const empty=created.reduce((n,s)=>n+(s.chapters||[]).filter(ch=>!(ch.moves||[]).length).length,0);
+    return ok(res,201,{ok:true,studies:created.map(s=>({id:s.id,title:s.title,chapterCount:s.chapters.length})),studyCount:created.length,chapterCount:chapters,emptyChapterCount:empty});
   }catch(e){
     console.error(e);
     return res.status(500).json({error:'Lichess study import failed'});
