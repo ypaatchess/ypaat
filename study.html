@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/chessground@10.2.0/assets/chessground.cburnett.css">
 <style>
 :root{--ink:#10202a;--muted:#66747d;--cream:#f7f4ed;--paper:#fff;--green:#173f35;--gold:#d9a441;--line:#e7e1d6}
-*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1320px,94%);margin:24px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:800;font-size:20px}.muted{color:var(--muted)}.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.btn.light{background:#eeeae1;color:var(--ink)}.btn.gold{background:var(--gold);color:#17130b}.btn.danger{background:#f5dddd;color:#7d2525}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 35px rgba(16,32,42,.06)}.layout{display:grid;grid-template-columns:minmax(420px,720px) minmax(300px,1fr);gap:18px;align-items:start}.board{width:min(72vw,680px);height:auto;aspect-ratio:1/1;max-width:680px;margin:12px auto;position:relative}.custom-board{width:100%;height:100%;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:8px solid #5b3a25;border-radius:4px;overflow:hidden;box-shadow:0 12px 28px rgba(16,32,42,.2);user-select:none}.custom-square{position:relative;display:flex;align-items:center;justify-content:center;font-size:clamp(30px,6.5vw,64px);line-height:1;cursor:pointer}.custom-square.light{background:#f0d9b5}.custom-square.dark{background:#b58863}.custom-square.selected{box-shadow:inset 0 0 0 4px #d9a441}.custom-square.last{box-shadow:inset 0 0 0 999px rgba(217,164,65,.18)}.custom-piece{cursor:grab;filter:drop-shadow(0 2px 1px rgba(0,0,0,.28));font-family:"DejaVu Sans",serif}.custom-piece.white{color:#fff;text-shadow:0 1px 1px #333}.custom-piece.black{color:#111;text-shadow:0 1px 1px #eee}.custom-coord{position:absolute;font-size:10px;font-weight:700;opacity:.65}.custom-file{left:4px;bottom:2px}.custom-rank{right:4px;top:2px}.cg-wrap{width:100%;height:100%}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1320px,94%);margin:24px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:800;font-size:20px}.muted{color:var(--muted)}.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.btn.light{background:#eeeae1;color:var(--ink)}.btn.gold{background:var(--gold);color:#17130b}.btn.danger{background:#f5dddd;color:#7d2525}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 35px rgba(16,32,42,.06)}.layout{display:grid;grid-template-columns:minmax(420px,720px) minmax(300px,1fr);gap:18px;align-items:start}.board{width:min(72vw,680px);height:auto;aspect-ratio:1/1;max-width:680px;margin:12px auto;position:relative}.custom-board{width:100%;height:100%;display:grid;position:relative;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:8px solid #5b3a25;border-radius:4px;overflow:hidden;box-shadow:0 12px 28px rgba(16,32,42,.2);user-select:none}.custom-square{position:relative;display:flex;align-items:center;justify-content:center;font-size:clamp(30px,6.5vw,64px);line-height:1;cursor:pointer}.custom-square.light{background:#f0d9b5}.custom-square.dark{background:#b58863}.custom-square.selected{box-shadow:inset 0 0 0 4px #d9a441}.custom-square.last{box-shadow:inset 0 0 0 999px rgba(217,164,65,.18)}.custom-piece{cursor:grab;filter:drop-shadow(0 2px 1px rgba(0,0,0,.28));font-family:"DejaVu Sans",serif}.custom-piece.white{color:#fff;text-shadow:0 1px 1px #333}.custom-piece.black{color:#111;text-shadow:0 1px 1px #eee}.drawingLayer{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}.custom-coord{position:absolute;font-size:10px;font-weight:700;opacity:.65}.custom-file{left:4px;bottom:2px}.custom-rank{right:4px;top:2px}.cg-wrap{width:100%;height:100%}
 #board .cg-wrap{width:100%;height:100%;position:relative}
 #board cg-board{background:linear-gradient(45deg,#b58863 25%,#f0d9b5 25%,#f0d9b5 50%,#b58863 50%,#b58863 75%,#f0d9b5 75%);background-size:25% 25%;overflow:hidden}
 #board .cg-wrap piece{position:absolute;width:12.5%;height:12.5%;display:block;z-index:2;font-family:"DejaVu Sans",serif;font-size:clamp(32px,6vw,64px);line-height:1;text-align:center;filter:drop-shadow(0 2px 1px rgba(0,0,0,.25));user-select:none}
@@ -37,7 +37,7 @@
     <button class="boardBtn" id="firstMove" title="First move">⏮</button>
     <button class="boardBtn" id="prevMove" title="Previous move">◀</button>
     <button class="boardBtn primary" id="nextMove" title="Next move">▶</button>
-    <button class="boardBtn" id="lastMove" title="Last move">⏭</button>
+    <button class="boardBtn" id="lastMove" title="Last move">⏭</button><button class="boardBtn adminOnly" id="clearDrawings" title="Clear arrows and circles">✕ Draw</button>
     <button class="boardBtn adminOnly" id="resetChapter" title="Reset line">↺</button>
   </div>
   <div class="moveArea">
@@ -240,11 +240,87 @@ function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(c
 function renderFields(){const ch=chapter();ch.exercises=ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{};if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
 function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
 function setupBoard(){board=null;rebuild()}
+function drawingKey(){return window.selectedNodeId||'root'}
+function drawingColor(e){
+ if(e.shiftKey)return 'red';
+ if(e.ctrlKey||e.metaKey)return 'blue';
+ if(e.altKey)return 'yellow';
+ return 'green';
+}
+function getDrawings(){
+ const ch=chapter();if(!ch)return[];
+ ch.shapesByPly=ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{};
+ return Array.isArray(ch.shapesByPly[drawingKey()])?ch.shapesByPly[drawingKey()]:[];
+}
+function setDrawings(items){
+ const ch=chapter();if(!ch)return;
+ ch.shapesByPly=ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{};
+ if(items.length)ch.shapesByPly[drawingKey()]=items;
+ else delete ch.shapesByPly[drawingKey()];
+}
+function drawPoint(sq){
+ const f=sq.charCodeAt(0)-97,r=8-Number(sq[1]);
+ return {x:f*12.5+6.25,y:r*12.5+6.25};
+}
+function renderDrawings(grid){
+ const old=grid.querySelector('.drawingLayer');if(old)old.remove();
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ svg.classList.add('drawingLayer');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
+ const colors={green:'#629924',red:'#d85050',blue:'#3d7bc4',yellow:'#d6a928'};
+ for(const d of getDrawings()){
+  const a=drawPoint(d.from),b=drawPoint(d.to),color=colors[d.color]||colors.green;
+  if(d.type==='circle'){
+   const el=document.createElementNS('http://www.w3.org/2000/svg','circle');el.setAttribute('cx',a.x);el.setAttribute('cy',a.y);el.setAttribute('r','5.1');el.setAttribute('fill','none');el.setAttribute('stroke',color);el.setAttribute('stroke-width','1.5');el.setAttribute('opacity','.82');svg.appendChild(el);
+  }else{
+   const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+   const p1={x:b.x-ux*3.8-uy*2.2,y:b.y-uy*3.8+ux*2.2},p2={x:b.x-ux*3.8+uy*2.2,y:b.y-uy*3.8-ux*2.2};
+   const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',`M ${a.x} ${a.y} L ${b.x} ${b.y} M ${p1.x} ${p1.y} L ${b.x} ${b.y} L ${p2.x} ${p2.y}`);path.setAttribute('fill','none');path.setAttribute('stroke',color);path.setAttribute('stroke-width','2.5');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');path.setAttribute('opacity','.82');svg.appendChild(path);
+  }
+ }
+ grid.appendChild(svg);
+}
+function toggleDrawing(from,to,e){
+ const items=getDrawings(),color=drawingColor(e),idx=items.findIndex(x=>x.type==='arrow'&&x.from===from&&x.to===to&&x.color===color);
+ if(idx>=0)items.splice(idx,1);
+ else items.push({type:'arrow',from,to,color});
+ setDrawings(items);renderDrawings($('board').querySelector('.custom-board'));
+ if(isAdmin)setStatus('Board annotation changed — save the study to keep it.');
+}
+function toggleCircle(sq,e){
+ const items=getDrawings(),color=drawingColor(e),idx=items.findIndex(x=>x.type==='circle'&&x.from===sq&&x.color===color);
+ if(idx>=0)items.splice(idx,1);
+ else items.push({type:'circle',from:sq,to:sq,color});
+ setDrawings(items);renderDrawings($('board').querySelector('.custom-board'));
+ if(isAdmin)setStatus('Board annotation changed — save the study to keep it.');
+}
+function bindDrawing(grid){
+ let start=null,moved=false;
+ grid.addEventListener('contextmenu',e=>e.preventDefault());
+ grid.addEventListener('pointerdown',e=>{
+  if(e.button!==2)return;
+  const sq=e.target.closest('.custom-square')?.dataset.square;if(!sq)return;
+  e.preventDefault();start=sq;moved=false;grid.setPointerCapture?.(e.pointerId);
+ });
+ grid.addEventListener('pointermove',e=>{
+  if(start&&e.buttons&2)moved=true;
+ });
+ grid.addEventListener('pointerup',e=>{
+  if(e.button!==2||!start)return;
+  const end=e.target.closest('.custom-square')?.dataset.square||start;
+  const ev={shiftKey:e.shiftKey,ctrlKey:e.ctrlKey,metaKey:e.metaKey,altKey:e.altKey};
+  if(start===end&&!moved)toggleCircle(start,ev);else if(start!==end)toggleDrawing(start,end,ev);
+  start=null;moved=false;
+ });
+}
+function clearDrawings(){
+ setDrawings([]);
+ const grid=$('board').querySelector('.custom-board');if(grid)renderDrawings(grid);
+ if(isAdmin)setStatus('Board annotations cleared — save the study to keep it.');
+}
 function renderCustomBoard(g){
  const root=$('board');if(!root)return;
  const pieceMap={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
  let selected=null;
- const selectedClass=window.selectedNodeId?'':'';
  root.innerHTML='<div class="custom-board"></div>';
  const grid=root.firstElementChild;
  const rows=g.board();
@@ -260,14 +336,13 @@ function renderCustomBoard(g){
        piece.dataset.square=sq;piece.draggable=isAdmin||!!exercise();
        piece.addEventListener('dragstart',e=>{if(!(isAdmin||exercise())||(exercise()&&(exerciseAutoPending||exerciseCompleted))){e.preventDefault();return}e.dataTransfer.setData('text/plain',sq);selected=sq;el.classList.add('selected')});
        piece.addEventListener('click',e=>{e.stopPropagation();if(!(isAdmin||exercise())||(exercise()&&(exerciseAutoPending||exerciseCompleted)))return;if(selected===sq){selected=null;el.classList.remove('selected');return}if(selected){const from=selected;selected=null;makeMove(from,sq)}else{selected=sq;el.classList.add('selected')}});
-       el.appendChild(piece);
      }
-     el.addEventListener('dragover',e=>{if(isAdmin||exercise()){if(exercise()&&exerciseCompleted)return;e.preventDefault()}});
-     el.addEventListener('drop',e=>{if(!(isAdmin||exercise())||(exercise()&&exerciseAutoPending))return;e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(from)makeMove(from,sq)});
-     el.addEventListener('click',()=>{if(!(isAdmin||exercise())||(exercise()&&exerciseAutoPending))return;if(selected){const from=selected;selected=null;makeMove(from,sq)}});
+     el.addEventListener('dragover',e=>{if(isAdmin||exercise())e.preventDefault()});
+     el.addEventListener('drop',e=>{if(!(isAdmin||exercise())||(exercise()&&(exerciseAutoPending||exerciseCompleted)))return;e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(from)makeMove(from,sq)});
      grid.appendChild(el);
    }
  }
+ renderDrawings(grid);bindDrawing(grid);
 }
 function finishExercise(ex,line){
  exerciseCompleted=true;
@@ -405,6 +480,7 @@ $('firstMove').onclick=jumpFirst;
 $('prevMove').onclick=jumpPrev;
 $('nextMove').onclick=jumpNext;
 $('lastMove').onclick=jumpLast;
+$('clearDrawings').onclick=clearDrawings;
 $('saveStudy').onclick=save;
 $('saveExercise').onclick=()=>{
  const ch=chapter();ch.exercises=ch.exercises||{};
