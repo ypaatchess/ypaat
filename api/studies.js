@@ -27,10 +27,15 @@ function safeStudy(s){return {...s,studentIds:Array.isArray(s.studentIds)?s.stud
 function canStudentView(study,id){return study.visibility==='public'||(study.studentIds||[]).includes(id)}
 function safeStudyForStudent(s,id){
  const study=safeStudy(s);
- const assigned=study.chapterAssignments?.[id];
- if(Array.isArray(assigned)){
+ const assigned=Array.isArray(study.chapterAssignments?.[id])?study.chapterAssignments[id]:null;
+ if(assigned){
   const allowed=new Set(assigned);
   study.chapters=study.chapters.filter(ch=>allowed.has(ch.id));
+  study.chapterRestricted=true;
+  study.assignedChapterIds=[...allowed];
+ }else{
+  study.chapterRestricted=false;
+  study.assignedChapterIds=study.chapters.map(ch=>ch.id);
  }
  return study;
 }
