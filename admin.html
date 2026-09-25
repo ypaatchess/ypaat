@@ -526,12 +526,12 @@ async function saveAssignStudents(){
  try{
   assigningStudy.studentIds=[...assigningSelected];
   assigningStudy.visibility='assigned';
-  const chapterAssignments={...(assigningStudy.chapterAssignments||{})};
+  const chapterAssignments={};
+  const existing=assigningStudy.chapterAssignments||{};
   const selectedIds=[...assigningSelected];
-  for(const id of Object.keys(chapterAssignments))if(!assigningSelected.has(id)&&!assigningStudy.studentIds.includes(id))delete chapterAssignments[id];
   for(const id of selectedIds){
-   if(assigningAllChapters)delete chapterAssignments[id];
-   else chapterAssignments[id]=[...assigningChapterIds];
+   if(assigningAllChapters)continue;
+   chapterAssignments[id]=[...assigningChapterIds];
   }
   assigningStudy.chapterAssignments=chapterAssignments;
   await api('/api/studies',{method:'PUT',body:JSON.stringify(assigningStudy)});
