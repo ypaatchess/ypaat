@@ -22,7 +22,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 
 <section id="dashboard" class="hidden">
 <div class="top"><div><div class="eyebrow">YPAAT Management</div><h1>Dashboard</h1></div><button id="logout" class="btn">Sign out</button></div>
-<div class="tabs"><button class="btn active" data-tab="students">Students</button><button class="btn" data-tab="classes">Classes</button><button class="btn" data-tab="homework">Homework</button><button class="btn" data-tab="studies">Studies</button><button class="btn" data-tab="pages">Articles</button></div>
+<div class="tabs"><button class="btn active" data-tab="students">Students</button><button class="btn" data-tab="classes">Classes</button><button class="btn" data-tab="homework">Homework</button><button class="btn" data-tab="studies">Studies</button><button class="btn" data-tab="attempts">Exercise Attempts</button><button class="btn" data-tab="pages">Articles</button></div>
 
 <div id="studentsTab" class="card">
 <div class="top"><div><h2>Students</h2><p class="muted">Create student accounts and assign one or more training levels.</p></div><button class="btn" id="newStudentBtn">+ New Student</button></div>
@@ -103,15 +103,8 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </form>
 </div>
 <div id="studiesList"></div>
-<div style="margin-top:22px;padding-top:18px;border-top:1px solid #e7e1d6">
-<div class="top"><div><h3 style="margin:0">Exercise attempts</h3><p class="muted">Review student training-line completions and retries.</p></div><button class="btn light" id="refreshAttempts">Refresh</button></div>
-<div class="row">
-<div><label>Study</label><select id="attemptStudyFilter"><option value="">All studies</option></select></div>
-<div><label>Student</label><select id="attemptStudentFilter"><option value="">All students</option></select></div>
 </div>
-<div id="attemptsList" style="margin-top:12px"><p class="muted">Loading attempts…</p></div>
-</div>
-</div>
+<div id="attemptsTab" class="card hidden"><div class="top"><div><h2 style="margin:0">Exercise Attempts</h2><p class="muted">Review student training-line completions and retries.</p></div><button class="btn light" id="refreshAttempts">Refresh</button></div><div class="row"><div><label>Study</label><select id="attemptStudyFilter"><option value="">All studies</option></select></div><div><label>Student</label><select id="attemptStudentFilter"><option value="">All students</option></select></div></div><div id="attemptsList" style="margin-top:12px"><p class="muted">Loading attempts…</p></div></div>
 <div id="pagesTab" class="card hidden">
 <div class="top"><div><h2>Articles</h2><p class="muted">Create and manage public learning pages.</p></div><button class="btn" id="newPageBtn">+ New Article</button></div>
 <div id="pages"></div>
@@ -138,7 +131,7 @@ async function api(path,options={}){
 }
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadHomework();loadClasses();loadStudies();loadPages()}
-function showTab(tab){document.getElementById('studentsTab').classList.toggle('hidden',tab!=='students');document.getElementById('classesTab').classList.toggle('hidden',tab!=='classes');document.getElementById('homeworkTab').classList.toggle('hidden',tab!=='homework');document.getElementById('studiesTab').classList.toggle('hidden',tab!=='studies');document.getElementById('pagesTab').classList.toggle('hidden',tab!=='pages');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab!=='students')closeStudentForm();if(tab!=='classes')closeClassForm();if(tab!=='homework')closeHomeworkForm();if(tab!=='pages')closePageForm();if(tab==='studies')loadStudies()}
+function showTab(tab){document.getElementById('studentsTab').classList.toggle('hidden',tab!=='students');document.getElementById('classesTab').classList.toggle('hidden',tab!=='classes');document.getElementById('homeworkTab').classList.toggle('hidden',tab!=='homework');document.getElementById('studiesTab').classList.toggle('hidden',tab!=='studies');document.getElementById('attemptsTab').classList.toggle('hidden',tab!=='attempts');document.getElementById('pagesTab').classList.toggle('hidden',tab!=='pages');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab!=='students')closeStudentForm();if(tab!=='classes')closeClassForm();if(tab!=='homework')closeHomeworkForm();if(tab!=='pages')closePageForm();if(tab==='studies')loadStudies();if(tab==='attempts'){loadStudies();loadAttempts()}}
 async function checkLogin(){try{const d=await api('/api/auth/me');if(d.user)showDashboard()}catch{}}
 async function loadStudents(){try{const d=await api('/api/students');students=d.students||[];renderStudents()}catch(e){document.getElementById('students').textContent=e.message}}
 function renderStudents(){
@@ -302,7 +295,6 @@ async function loadStudies(){
   updateStudySelection();
   const sf=document.getElementById('attemptStudyFilter');sf.innerHTML='<option value="">All studies</option>'+list.map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.title)+'</option>').join('');
   const st=document.getElementById('attemptStudentFilter');st.innerHTML='<option value="">All students</option>'+(d.students||[]).map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.name)+'</option>').join('');
-  await loadAttempts();
  }catch(e){document.getElementById('studiesList').textContent=e.message}
 }
 function openStudentStudies(studentId){
