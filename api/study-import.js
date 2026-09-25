@@ -53,26 +53,56 @@ function parseChapter(game,index){
   const source=parseLichessStudyUrl(sourceUrl);
   let moves=[];
   let parseError='';
+  const mapHistory=(hist)=>hist.map(m=>({
+    id:crypto.randomUUID(),
+    parentId:null,
+    from:m.from,
+    to:m.to,
+    promotion:m.promotion||'q',
+    san:m.san,
+    comment:''
+  }));
   const load=(text)=>{
     const chess=startFen!=='start'?new Chess(startFen):new Chess();
     chess.loadPgn(text,{strict:false});
-    const hist=chess.history({verbose:true});
-    return hist.map(m=>({
-      id:crypto.randomUUID(),
-      parentId:null,
-      from:m.from,
-      to:m.to,
-      promotion:m.promotion||'q',
-      san:m.san,
-      comment:''
-    }));
+    return mapHistory(chess.history({verbose:true}));
+  };
+  const loadMainlineTokens=(text)=>{
+    const cleaned=stripVariationsAndComments(text)
+      .replace(/^\s*\[[^\n]*\]\s*$/gm,' ')
+      .replace(/\s+/g,' ')
+      .replace(/\d+\.(\.\.)?/g,' ')
+      .replace(/\.{3}/g,' ')
+      .replace(/\s+(1-0|0-1|1\/2-1\/2|\*)\s*$/,' ')
+      .trim();
+    const chess=startFen!=='start'?new Chess(startFen):new Chess();
+    const moves=[];
+    for(const token of cleaned.split(' ').filter(Boolean)){
+      if(/^\$\d+$/.test(token)||/^(1-0|0-1|1\/2-1\/2|\*)$/.test(token))continue;
+      try{
+        const made=chess.move(token,{sloppy:true});
+        moves.push({
+          id:crypto.randomUUID(),
+          parentId:null,
+          from:made.from,
+          to:made.to,
+          promotion:made.promotion||'q',
+          san:made.san,
+          comment:''
+        });
+      }catch(e){
+        throw new Error('Could not parse move "'+token+'"');
+      }
+    }
+    return moves;
   };
   try{
     moves=load(game);
   }catch(e){
     parseError=e?.message||'PGN parse failed';
     try{
-      moves=load(stripVariationsAndComments(game));
+      moves=loadMainlineTokens(game);
+      parseError='';
     }catch(e2){
       parseError=e2?.message||parseError;
       moves=[];
