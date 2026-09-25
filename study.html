@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/chessground@10.2.0/assets/chessground.cburnett.css">
 <style>
 :root{--ink:#10202a;--muted:#66747d;--cream:#f7f4ed;--paper:#fff;--green:#173f35;--gold:#d9a441;--line:#e7e1d6}
-*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1320px,94%);margin:24px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:800;font-size:20px}.muted{color:var(--muted)}.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.btn.light{background:#eeeae1;color:var(--ink)}.btn.gold{background:var(--gold);color:#17130b}.btn.danger{background:#f5dddd;color:#7d2525}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 35px rgba(16,32,42,.06)}.layout{display:grid;grid-template-columns:minmax(420px,720px) minmax(300px,1fr);gap:18px;align-items:start}.board{width:min(72vw,680px);height:min(72vw,680px);max-width:680px;max-height:680px;margin:auto}.cg-wrap{width:100%;height:100%}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1320px,94%);margin:24px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-weight:800;font-size:20px}.muted{color:var(--muted)}.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.btn.light{background:#eeeae1;color:var(--ink)}.btn.gold{background:var(--gold);color:#17130b}.btn.danger{background:#f5dddd;color:#7d2525}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 35px rgba(16,32,42,.06)}.layout{display:grid;grid-template-columns:minmax(420px,720px) minmax(300px,1fr);gap:18px;align-items:start}.board{width:min(72vw,680px);height:auto;aspect-ratio:1/1;max-width:680px;margin:12px auto;position:relative}.custom-board{width:100%;height:100%;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:8px solid #5b3a25;border-radius:4px;overflow:hidden;box-shadow:0 12px 28px rgba(16,32,42,.2);user-select:none}.custom-square{position:relative;display:flex;align-items:center;justify-content:center;font-size:clamp(30px,6.5vw,64px);line-height:1;cursor:pointer}.custom-square.light{background:#f0d9b5}.custom-square.dark{background:#b58863}.custom-square.selected{box-shadow:inset 0 0 0 4px #d9a441}.custom-square.last{box-shadow:inset 0 0 0 999px rgba(217,164,65,.18)}.custom-piece{cursor:grab;filter:drop-shadow(0 2px 1px rgba(0,0,0,.28));font-family:"DejaVu Sans",serif}.custom-piece.white{color:#fff;text-shadow:0 1px 1px #333}.custom-piece.black{color:#111;text-shadow:0 1px 1px #eee}.custom-coord{position:absolute;font-size:10px;font-weight:700;opacity:.65}.custom-file{left:4px;bottom:2px}.custom-rank{right:4px;top:2px}.cg-wrap{width:100%;height:100%}
 #board .cg-wrap{width:100%;height:100%;position:relative}
 #board cg-board{background:linear-gradient(45deg,#b58863 25%,#f0d9b5 25%,#f0d9b5 50%,#b58863 50%,#b58863 75%,#f0d9b5 75%);background-size:25% 25%;overflow:hidden}
 #board .cg-wrap piece{position:absolute;width:12.5%;height:12.5%;display:block;z-index:2;font-family:"DejaVu Sans",serif;font-size:clamp(32px,6vw,64px);line-height:1;text-align:center;filter:drop-shadow(0 2px 1px rgba(0,0,0,.25));user-select:none}
@@ -119,19 +119,43 @@ function rebuild(){
  const ch=chapter();const r=replay(ch);game=r.g;currentPly=r.path.length;
  states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen(),...r.arr.map(x=>x.fen)];
  exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];
- const ex=!isAdmin?exercise():null;
- board.set({fen:game.fen(),lastMove:r.path.length?[r.path[r.path.length-1].from,r.path[r.path.length-1].to]:undefined,
-   movable:{enabled:isAdmin||!!ex,free:true,color:game.turn()==='w'?'white':'black',events:{after:(orig,dest)=>makeMove(orig,dest)}},
-   viewOnly:false,
-   drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[]}
- });
+ renderCustomBoard(game);
  renderMoves();renderFields();renderExercise()
 }
 function renderMoves(){const ch=chapter(),by=new Map((ch.moves||[]).map(m=>[m.id,m]));const children=p=>(ch.moves||[]).filter(m=>(m.parentId||null)===(p||null));let html='';function walk(parent,depth){for(const m of children(parent)){const idx=(ch.moves||[]).indexOf(m);html+='<button class="move '+(m.id===window.selectedNodeId?'active':'')+'" style="margin-left:'+Math.min(depth*14,56)+'px" data-node="'+esc(m.id)+'">'+(depth?'↳ ':'')+esc(m.san||'')+'</button>';walk(m.id,depth+1)}}walk(null,0);$('moves').innerHTML=html||'<span class="muted">No moves yet. Drag a piece on the board to begin.</span>';document.querySelectorAll('[data-node]').forEach(b=>b.onclick=()=>{window.selectedNodeId=b.dataset.node;rebuild()});const sm=selectedMove();$('moveComment').value=sm?.comment||''}
 function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(currentChapter,Math.max(0,chs.length-1));const chs0=chs;$('chapters').innerHTML=chs0.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{currentChapter=Number(b.dataset.ch);currentPly=0;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter='+currentChapter);$('shareUrl').value=location.href;rebuild()})}
 function renderFields(){const ch=chapter();ch.exercises=ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{};if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
 function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
-function setupBoard(){const ch=chapter();board=Chessground($('board'),{orientation:'white',coordinates:true,viewOnly:false,drawable:{enabled:isAdmin,visible:true,shapes:(ch.shapesByPly&&ch.shapesByPly[String(currentPly)])||[],onChange:shapes=>{if(!isAdmin)return;const c=chapter();c.shapesByPly=c.shapesByPly&&typeof c.shapesByPly==='object'?c.shapesByPly:{};c.shapesByPly[String(currentPly)]=shapes;}},movable:{enabled:isAdmin,free:true,color:'white',events:{after:(orig,dest)=>makeMove(orig,dest)}}});rebuild()}
+function setupBoard(){board=null;rebuild()}
+function renderCustomBoard(g){
+ const root=$('board');if(!root)return;
+ const pieceMap={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
+ let selected=null;
+ const selectedClass=window.selectedNodeId?'':'';
+ root.innerHTML='<div class="custom-board"></div>';
+ const grid=root.firstElementChild;
+ const rows=g.board();
+ for(let ri=0;ri<8;ri++){
+   for(let fi=0;fi<8;fi++){
+     const sq=String.fromCharCode(97+fi)+(8-ri),light=(ri+fi)%2===1;
+     const el=document.createElement('div');el.className='custom-square '+(light?'light':'dark');el.dataset.square=sq;
+     if(fi===0){const rank=document.createElement('span');rank.className='custom-coord custom-rank';rank.textContent=8-ri;el.appendChild(rank)}
+     if(ri===7){const file=document.createElement('span');file.className='custom-coord custom-file';file.textContent=String.fromCharCode(97+fi);el.appendChild(file)}
+     const p=rows[ri][fi];
+     if(p){
+       const piece=document.createElement('span');piece.className='custom-piece '+(p.color==='w'?'white':'black');piece.textContent=p.color==='w'?pieceMap[p.type].toUpperCase().replace('♘','♘').replace('♙','♙').replace('♗','♗').replace('♖','♖').replace('♕','♕').replace('♔','♔') : pieceMap[p.type];
+       piece.dataset.square=sq;piece.draggable=isAdmin||!!exercise();
+       piece.addEventListener('dragstart',e=>{if(!(isAdmin||exercise())){e.preventDefault();return}e.dataTransfer.setData('text/plain',sq);selected=sq;el.classList.add('selected')});
+       piece.addEventListener('click',e=>{e.stopPropagation();if(!(isAdmin||exercise()))return;if(selected===sq){selected=null;el.classList.remove('selected');return}if(selected){const from=selected;selected=null;makeMove(from,sq)}else{selected=sq;el.classList.add('selected')}});
+       el.appendChild(piece);
+     }
+     el.addEventListener('dragover',e=>{if(isAdmin||exercise())e.preventDefault()});
+     el.addEventListener('drop',e=>{if(!(isAdmin||exercise()))return;e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(from)makeMove(from,sq)});
+     el.addEventListener('click',()=>{if(!(isAdmin||exercise()))return;if(selected){const from=selected;selected=null;makeMove(from,sq)}});
+     grid.appendChild(el);
+   }
+ }
+}
 function makeMove(orig,dest){
  const ch=chapter();
  const ex=!isAdmin?exercise():null;
@@ -154,7 +178,7 @@ function makeMove(orig,dest){
    }
    exerciseStep++;
    exerciseGame=g;
-   board.set({fen:g.fen(),lastMove:[orig,dest],movable:{enabled:exerciseStep<line.length,free:true,color:g.turn()==='w'?'white':'black'}});
+   renderCustomBoard(g);
    if(exerciseStep>=line.length){
      $('exerciseFeedback').textContent=ex.success||'Correct — training line complete.';
      board.set({movable:{enabled:false}});
