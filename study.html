@@ -111,10 +111,11 @@ function normalizeStudy(){for(const ch of (study?.chapters||[])){ch.moves=Array.
 function startGame(ch){try{return ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess()}catch{return new Chess()}}
 function nodePath(ch,targetId){const by=new Map((ch.moves||[]).map(m=>[m.id,m]));const out=[];let n=targetId?by.get(targetId):null;while(n){out.unshift(n);n=n.parentId?by.get(n.parentId):null}return out}
 function selectedMove(){const ch=chapter();return ch.moves.find(m=>m.id===window.selectedNodeId)||null}
-function exerciseKey(){return window.selectedNodeId||'root'}
+function exerciseKey(){return activeExerciseKey||window.selectedNodeId||'root'}
 function exercise(){return chapter()?.exercises?.[exerciseKey()]||null}
 function childOf(ch,parentId){return (ch.moves||[]).find(m=>(m.parentId||null)===(parentId||null))||null}
 function exerciseLine(ch,startId){const out=[];let n=childOf(ch,startId);while(n){out.push(n);n=childOf(ch,n.id)}return out}
+let activeExerciseKey=null;
 let exerciseStep=0,exerciseGame=null,exerciseWrongMoves=0,exerciseWrongEvents=[],exerciseSaving=false,exerciseAutoPending=false;
 function renderExercise(){
  const ex=exercise();
@@ -148,7 +149,9 @@ function renderStudentExercises(){
  }).join('');
  list.querySelectorAll('[data-exercise-start]').forEach(btn=>btn.onclick=()=>{
   const key=btn.dataset.exerciseStart;
+  activeExerciseKey=key;
   window.selectedNodeId=key==='root'?null:key;
+  exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];exerciseAutoPending=false;
   rebuild();
   $('exerciseFeedback').textContent='Find the coach’s move on the board.';
   $('exercisePanel').classList.remove('hidden');
@@ -189,8 +192,10 @@ function rebuild(){
  const ch=chapter();const r=replay(ch);game=r.g;currentPly=r.path.length;
  states=[ch.startFen&&ch.startFen!=='start'?ch.startFen:new Chess().fen()];
  for(const id of r.path){const p=r.map.get(id);if(p)states.push(p.fen)}
- exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];exerciseAutoPending=false;
- renderCustomBoard(game);
+ if(!activeExerciseKey){
+  exerciseStep=0;exerciseGame=null;exerciseWrongMoves=0;exerciseWrongEvents=[];exerciseAutoPending=false;
+ }
+ renderCustomBoard(activeExerciseKey&&!isAdmin?(exerciseGame||game):game);
  renderMoves();renderFields();renderExercise()
 }
 function moveLabel(m,depth){
@@ -219,7 +224,10 @@ function renderMoves(){
  }
  walk(null,0);
  $('moves').innerHTML=html||'<span class="muted">No moves yet. Drag a piece on the board to begin.</span>';
- document.querySelectorAll('[data-node]').forEach(b=>b.onclick=()=>{window.selectedNodeId=b.dataset.node;rebuild()});
+ document.querySelectorAll('[data-node]').forEach(b=>b.onclick=()=>{
+  if(!isAdmin&&activeExerciseKey)return;
+  window.selectedNodeId=b.dataset.node;rebuild()
+});
  const sm=selectedMove();$('moveComment').value=sm?.comment||'';
  const ann=$('moveAnnotation');
  if(sm&&(sm.comment||sm.nags?.length)){
@@ -227,7 +235,8 @@ function renderMoves(){
   ann.innerHTML=(sm.comment?'<div>'+esc(sm.comment).replace(/\n/g,'<br>')+'</div>':'')+(sm.nags?.length?'<div class="annotationHint" style="margin-top:5px">Annotations: '+esc(sm.nags.join(' '))+'</div>':'');
  }else{ann.style.display='none';ann.textContent=''}
 }
-function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(currentChapter,Math.max(0,chs.length-1));const chs0=chs;$('chapters').innerHTML=chs0.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{currentChapter=Number(b.dataset.ch);currentPly=0;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter='+currentChapter);$('shareUrl').value=location.href;rebuild()})}
+function renderChapters(){const chs=study.chapters||[];currentChapter=Math.min(currentChapter,Math.max(0,chs.length-1));const chs0=chs;$('chapters').innerHTML=chs0.map((c,i)=>'<button class="btn '+(i===currentChapter?'gold':'light')+'" data-ch="'+i+'">'+esc(c.title||('Chapter '+(i+1)))+'</button>').join('');document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{
+ currentChapter=Number(b.dataset.ch);currentPly=0;activeExerciseKey=null;exerciseGame=null;exerciseStep=0;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter='+currentChapter);$('shareUrl').value=location.href;rebuild()})}
 function renderFields(){const ch=chapter();ch.exercises=ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{};if(isAdmin){$('editTitle').value=study.title||'';$('editDescription').value=study.description||'';$('visibility').value=study.visibility||'assigned';$('chapterTitle').value=ch.title||'';$('chapterFen').value=ch.startFen||'start';$('chapterNotes').value=ch.notes||'';$('notes').textContent=ch.notes||'—'}else $('notes').textContent=ch.notes||'—';}
 function renderStudents(){if(!isAdmin)return;$('studentChecks').innerHTML=students.map(s=>'<label><input type="checkbox" value="'+esc(s.id)+'" '+((study.studentIds||[]).includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')||'<span class="muted">No students yet.</span>'}
 function setupBoard(){board=null;rebuild()}
@@ -287,7 +296,8 @@ function makeMove(orig,dest){
  const ch=chapter();
  const ex=!isAdmin?exercise():null;
  if(ex&&exerciseAutoPending)return;
- const g=ex?(exerciseGame||replay(ch).g):replay(ch).g;
+ const base=ex?(exerciseGame||replay(ch).g):replay(ch).g;
+ const g=ex?new Chess(base.fen()):base;
  let made=null;
  try{made=g.move({from:orig,to:dest,promotion:'q'})}catch{}
  if(!made){
@@ -312,9 +322,9 @@ function makeMove(orig,dest){
      // the exercise or move the student back to the origin position.
      // g contains the rejected move. Rebuild the board from the
      // position before the student's attempt, without resetting the exercise step.
-     exerciseGame=exerciseGame||replay(ch).g;
+     // Keep the saved exercise position untouched; g was a clone.
      exerciseAutoPending=false;
-     renderCustomBoard(exerciseGame);
+     renderCustomBoard(exerciseGame||base);
      return
    }
    exerciseStep++;
@@ -334,7 +344,10 @@ function makeMove(orig,dest){
  const node={id:crypto.randomUUID(),parentId,from:orig,to:dest,promotion:'q',san:made.san,comment:''};
  ch.moves.push(node);window.selectedNodeId=node.id;rebuild()
 }
-function jumpToNode(id){window.selectedNodeId=id||null;rebuild()}
+function jumpToNode(id){
+ if(!isAdmin&&activeExerciseKey)return;
+ window.selectedNodeId=id||null;rebuild()
+}
 function jumpFirst(){jumpToNode(null)}
 function jumpPrev(){
  const ch=chapter(),current=window.selectedNodeId||null;
