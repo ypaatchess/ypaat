@@ -32,18 +32,122 @@ function tags(pgn){
   return out;
 }
 function tag(pgn,name){return tags(pgn)[name]||''}
-function stripVariationsAndComments(game){
-  let out=game;
-  // Remove semicolon comments and nested RAVs without touching the header section.
-  out=out.replace(/;[^\r\n]*/g,' ');
-  out=out.replace(/\{[^}]*\}/gs,' ');
-  let previous='';
-  while(previous!==out){
-    previous=out;
-    out=out.replace(/\([^()]*\)/g,' ');
+function stripHeaders(game){
+  return String(game||'').replace(/^(?:\\s*\\[[^\\n]*\\]\\s*)+/,'').trim();
+}
+function tokenizeMovetext(game){
+  const text=stripHeaders(game).replace(/\\r\\n/g,'\\n');
+  const tokens=[];
+  let i=0;
+  while(i<text.length){
+    const ch=text[i];
+    if(/\\s/.test(ch)){i++;continue}
+    if(ch==='('||ch===')'){tokens.push({type:ch});i++;continue}
+    if(ch==='{'){
+      let j=i+1,depth=1;
+      while(j<text.length&&depth){
+        if(text[j]==='{')depth++;
+        else if(text[j]==='}')depth--;
+        j++;
+      }
+      tokens.push({type:'comment',value:text.slice(i+1,Math.max(i+1,j-1)).trim()});
+      i=j;continue;
+    }
+    if(ch===';'){
+      const j=text.indexOf('\\n',i);
+      tokens.push({type:'comment',value:text.slice(i+1,j<0?text.length:j).trim()});
+      i=j<0?text.length:j;continue;
+    }
+    let j=i+1;
+    while(j<text.length&&!/[\\s(){};]/.test(text[j]))j++;
+    tokens.push({type:'word',value:text.slice(i,j)});
+    i=j;
   }
-  out=out.replace(/\$\d+/g,' ');
-  return out;
+  return tokens;
+}
+function isMoveNumber(token){
+  return /^\\d+\\.(?:\\.\\.)?$/.test(token)||/^\\d+\\.\\.\\.$/.test(token);
+}
+function isResult(token){return /^(1-0|0-1|1\\/2-1\\/2|\\*)$/.test(token)}
+function parseStructuredPgn(game,startFen){
+  const chess=startFen!=='start'?new Chess(startFen):new Chess();
+  const tokens=tokenizeMovetext(game);
+  const moves=[];
+  const stack=[];
+  let currentId=null;
+  let currentBeforeFen=chess.fen();
+  let pendingNags=[];
+  let chapterNote='';
+  const byId=new Map();
+
+  function addComment(value){
+    if(!value)return;
+    const node=currentId?byId.get(currentId):null;
+    if(node)node.comment=node.comment?node.comment+'\\n'+value:value;
+    else chapterNote=chapterNote?chapterNote+'\\n'+value:value;
+  }
+  function addNag(value){
+    if(!value)return;
+    const node=currentId?byId.get(currentId):null;
+    if(node)node.nags=[...(node.nags||[]),value];
+    else pendingNags.push(value);
+  }
+
+  for(const token of tokens){
+    if(token.type==='comment'){addComment(token.value);continue}
+    if(token.type==='('){
+      if(currentId){
+        const current=byId.get(currentId);
+        stack.push({fen:currentBeforeFen,parentId:current.parentId});
+        chess.load(currentBeforeFen);
+        currentId=current.parentId||null;
+        currentBeforeFen=chess.fen();
+      }else{
+        stack.push({fen:chess.fen(),parentId:null});
+      }
+      continue;
+    }
+    if(token.type===')'){
+      const state=stack.pop();
+      if(state){
+        chess.load(state.fen);
+        currentId=state.parentId||null;
+        currentBeforeFen=state.fen;
+      }
+      continue;
+    }
+
+    const word=token.value;
+    if(isMoveNumber(word)||/^\\.+$/.test(word))continue;
+    if(isResult(word))continue;
+    if(/^\\$\\d+$/.test(word)){addNag(word);continue}
+    if(/^(?:!!|!\\?|\\?!|\\?\\?|!|\\?)$/.test(word)){addNag(word);continue}
+
+    const beforeFen=chess.fen();
+    let made;
+    try{
+      made=chess.move(word,{sloppy:true});
+    }catch(e){
+      throw new Error('Could not parse move "'+word+'"');
+    }
+    const node={
+      id:crypto.randomUUID(),
+      parentId:currentId,
+      from:made.from,
+      to:made.to,
+      promotion:made.promotion||'q',
+      san:made.san,
+      comment:'',
+      nags:pendingNags
+    };
+    pendingNags=[];
+    moves.push(node);
+    byId.set(node.id,node);
+    currentId=node.id;
+    currentBeforeFen=beforeFen;
+  }
+  if(stack.length)throw new Error('Unclosed PGN variation');
+  return {moves,notes:chapterNote};
 }
 function parseChapter(game,index){
   const h=tags(game);
@@ -53,67 +157,19 @@ function parseChapter(game,index){
   const source=parseLichessStudyUrl(sourceUrl);
   let moves=[];
   let parseError='';
-  const mapHistory=(hist)=>hist.map(m=>({
-    id:crypto.randomUUID(),
-    parentId:null,
-    from:m.from,
-    to:m.to,
-    promotion:m.promotion||'q',
-    san:m.san,
-    comment:''
-  }));
-  const load=(text)=>{
-    const chess=startFen!=='start'?new Chess(startFen):new Chess();
-    chess.loadPgn(text,{strict:false});
-    return mapHistory(chess.history({verbose:true}));
-  };
-  const loadMainlineTokens=(text)=>{
-    const cleaned=stripVariationsAndComments(text)
-      .replace(/^\s*\[[^\n]*\]\s*$/gm,' ')
-      .replace(/\s+/g,' ')
-      .replace(/\d+\.(\.\.)?/g,' ')
-      .replace(/\.{3}/g,' ')
-      .replace(/\s+(1-0|0-1|1\/2-1\/2|\*)\s*$/,' ')
-      .trim();
-    const chess=startFen!=='start'?new Chess(startFen):new Chess();
-    const moves=[];
-    for(const token of cleaned.split(' ').filter(Boolean)){
-      if(/^\$\d+$/.test(token)||/^(1-0|0-1|1\/2-1\/2|\*)$/.test(token))continue;
-      try{
-        const made=chess.move(token,{sloppy:true});
-        moves.push({
-          id:crypto.randomUUID(),
-          parentId:null,
-          from:made.from,
-          to:made.to,
-          promotion:made.promotion||'q',
-          san:made.san,
-          comment:''
-        });
-      }catch(e){
-        throw new Error('Could not parse move "'+token+'"');
-      }
-    }
-    return moves;
-  };
+  let importedNotes='';
   try{
-    moves=load(game);
+    const parsed=parseStructuredPgn(game,startFen);
+    moves=parsed.moves;
+    importedNotes=parsed.notes;
   }catch(e){
     parseError=e?.message||'PGN parse failed';
-    try{
-      moves=loadMainlineTokens(game);
-      parseError='';
-    }catch(e2){
-      parseError=e2?.message||parseError;
-      moves=[];
-    }
   }
-  moves.forEach((m,i)=>{m.parentId=i?moves[i-1].id:null});
   return {
     id:crypto.randomUUID(),
     title,
     startFen,
-    notes:'Imported from Lichess',
+    notes:importedNotes||'Imported from Lichess',
     moves,
     pgn:game,
     sourceUrl,
