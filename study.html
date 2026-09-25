@@ -376,7 +376,7 @@ async function save(){if(!isAdmin)return;study.title=$('editTitle').value.trim()
 function setStatus(t,c=''){ $('status').textContent=t;$('status').className=c}
 async function load(){try{
  let d;
- if(studyId)d=await api('/api/studies?id='+encodeURIComponent(studyId));
+ if(studyId)d=await api('/api/studies?id='+encodeURIComponent(studyId)+(isStudent?'&view=student':''));
  else {d=await api('/api/auth/me');if(!d.user){location.href='/admin.html';return}isAdmin=true;d=await api('/api/studies',{method:'POST',body:JSON.stringify({title:'New YPAAT Study',description:'',visibility:'assigned',studentIds:[]})});studyId=d.study.id;history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0')}
  study=d.study;normalizeStudy();students=d.students||[];
  // Prefer an active student session for the study viewer. This prevents a stale
