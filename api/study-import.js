@@ -1,4 +1,6 @@
 const {adminFromRequest}=require('../lib/auth');
+const {Chess}=require('chess.js');
+const crypto=require('crypto');
 
 function ok(res,status,data){res.status(status).json(data)}
 function clean(v){return String(v??'').trim()}
@@ -42,7 +44,23 @@ module.exports=async function(req,res){
     const pgn=await response.text();
     if(!pgn.trim())return ok(res,400,{error:'Lichess returned an empty study.'});
     const games=splitGames(pgn);
-    const chapters=games.map((game,index)=>({title:tag(game,'ChapterName')||tag(game,'Event')||('Chapter '+(index+1)),pgn:game}));
+    const chapters=games.map((game,index)=>{
+      const title=tag(game,'ChapterName')||tag(game,'Event')||('Chapter '+(index+1));
+      const startFen=tag(game,'FEN')||'start';
+      const chess=startFen!=='start'?new Chess(startFen):new Chess();
+      let moves=[];
+      try{
+        chess.loadPgn(game);
+        moves=chess.history({verbose:true}).map(m=>({id:crypto.randomUUID(),parentId:moves.length?moves[moves.length-1].id:null,from:m.from,to:m.to,promotion:m.promotion||'q',san:m.san,comment:''}));
+      }catch(e){
+        try{
+          const fallback=startFen!=='start'?new Chess(startFen):new Chess();
+          const hist=fallback.history({verbose:true});
+          moves=hist.map(m=>({id:crypto.randomUUID(),parentId:moves.length?moves[moves.length-1].id:null,from:m.from,to:m.to,promotion:m.promotion||'q',san:m.san,comment:''}));
+        }catch{}
+      }
+      return {id:crypto.randomUUID(),title,startFen,notes:'Imported from Lichess',moves,pgn:game,shapesByPly:{},exercises:{}};
+    });
     return ok(res,200,{studyId:parsed.studyId,title:tag(games[0]||'','StudyName')||('Imported Lichess Study '+parsed.studyId),chapters,chapterCount:chapters.length});
   }catch(e){
     console.error(e);
