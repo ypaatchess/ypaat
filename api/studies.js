@@ -38,21 +38,45 @@ module.exports=async function(req,res){
   const b=await body(req);
 
   if(req.method==='POST'){
+   const normalizeChapters=arr=>Array.isArray(arr)?arr.map(ch=>({
+     id:clean(ch.id)||crypto.randomUUID(),
+     title:clean(ch.title)||'Untitled chapter',
+     startFen:clean(ch.startFen)||'start',
+     notes:String(ch.notes??''),
+     moves:Array.isArray(ch.moves)?ch.moves.map(m=>({
+       from:clean(m.from),to:clean(m.to),promotion:clean(m.promotion)||undefined,san:clean(m.san),
+       comment:String(m.comment??''),parentId:clean(m.parentId)||null,id:clean(m.id)||crypto.randomUUID()
+     })):[],
+     pgn:String(ch.pgn??''),
+     sourceUrl:clean(ch.sourceUrl),
+     sourceStudyId:clean(ch.sourceStudyId),
+     sourceChapterId:clean(ch.sourceChapterId),
+     parseError:clean(ch.parseError),
+     shapesByPly:ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{},
+     exercises:ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{}
+   })).filter(ch=>ch.title||ch.moves.length):[];
+
+   if(Array.isArray(b.studies)){
+     if(!b.studies.length)return ok(res,400,{error:'At least one study is required'});
+     const now=new Date().toISOString();
+     const created=b.studies.map(spec=>{
+       const title=clean(spec.title),description=clean(spec.description??b.description);
+       const visibility=(spec.visibility||b.visibility)==='public'?'public':'assigned';
+       const studentIds=[...new Set((Array.isArray(spec.studentIds)?spec.studentIds:(Array.isArray(b.studentIds)?b.studentIds:[])).map(clean).filter(Boolean))].filter(id=>students.some(s=>s.id===id));
+       const imported=normalizeChapters(spec.chapters);
+       const firstChapter={id:crypto.randomUUID(),title:'Chapter 1',startFen:'start',notes:'',moves:[],shapesByPly:{},exercises:{}};
+       return {id:crypto.randomUUID(),title:title||'Imported YPAAT Study',description,visibility,studentIds,chapters:imported.length?imported:[firstChapter],createdAt:now,updatedAt:now};
+     });
+     studies.push(...created);await redis.set(KEY,JSON.stringify(studies));
+     return ok(res,201,{studies:created.map(s=>({id:s.id,title:s.title,description:s.description,visibility:s.visibility,chapterCount:s.chapters.length}))});
+   }
+
    const title=clean(b.title),description=clean(b.description);
    const visibility=b.visibility==='public'?'public':'assigned';
    const studentIds=[...new Set((Array.isArray(b.studentIds)?b.studentIds:[]).map(clean).filter(Boolean))].filter(id=>students.some(s=>s.id===id));
    if(!title)return ok(res,400,{error:'Study title is required'});
    const now=new Date().toISOString();
-   const imported=Array.isArray(b.chapters)?b.chapters.map(ch=>({
-     id:clean(ch.id)||crypto.randomUUID(),
-     title:clean(ch.title)||'Untitled chapter',
-     startFen:clean(ch.startFen)||'start',
-     notes:String(ch.notes??''),
-     moves:Array.isArray(ch.moves)?ch.moves.map(m=>({from:clean(m.from),to:clean(m.to),promotion:clean(m.promotion)||undefined,san:clean(m.san),comment:String(m.comment??''),parentId:clean(m.parentId)||null,id:clean(m.id)||crypto.randomUUID()})):[],
-     pgn:String(ch.pgn??''),
-     shapesByPly:ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{},
-     exercises:ch.exercises&&typeof ch.exercises==='object'?ch.exercises:{}
-   })).filter(ch=>ch.title||ch.moves.length):[];
+   const imported=normalizeChapters(b.chapters);
    const firstChapter={id:crypto.randomUUID(),title:'Chapter 1',startFen:'start',notes:'',moves:[],shapesByPly:{},exercises:{}};
    const study={id:crypto.randomUUID(),title,description,visibility,studentIds,chapters:imported.length?imported:[firstChapter],createdAt:now,updatedAt:now};
    studies.push(study);await redis.set(KEY,JSON.stringify(studies));
