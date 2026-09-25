@@ -257,6 +257,8 @@ function renderCustomBoard(g){
      grid.appendChild(el);
    }
  }
+ renderDrawings(grid);
+ bindDrawings(grid);
 }
 function makeMove(orig,dest){
  const ch=chapter();
