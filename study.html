@@ -146,7 +146,6 @@ function recoverEmptyChapterMoves(ch){
  }
  if(!moves.length)return false;
  ch.moves=moves;
- ch.startFen=source.fen();
  return true;
 }
 function nodePath(ch,targetId){const by=new Map((ch.moves||[]).map(m=>[m.id,m]));const out=[];let n=targetId?by.get(targetId):null;while(n){out.unshift(n);n=n.parentId?by.get(n.parentId):null}return out}
