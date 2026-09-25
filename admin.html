@@ -357,16 +357,16 @@ async function importLichessStudy(e){
  try{
   let d;
   if(file){
-   if(!/\.pgn$/i.test(file.name)) throw new Error('Please choose a PGN file.');
+   if(!/\\.pgn$/i.test(file.name)) throw new Error('Please choose a PGN file.');
    status.textContent='Reading PGN file…';
    const pgn=await file.text();
    if(!pgn.trim()) throw new Error('The selected PGN file is empty.');
-   d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn})});
-   d=await recoverSmallImport(d,status);
+   status.textContent='Parsing and saving the complete Lichess study tree…';
+   d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn,title:titleOverride})});
   }else{
    if(!url) throw new Error('Enter a Lichess Study URL or choose a PGN file.');
    try{
-    d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url})});
+    d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,title:titleOverride})});
    }catch(serverErr){
     status.textContent='Server export unavailable — trying Lichess directly from your browser…';
     const parsed=new URL(url);
@@ -380,27 +380,17 @@ async function importLichessStudy(e){
     if(!lichessRes.ok) throw new Error('Lichess did not allow this study export. Download the PGN and choose the file here.');
     const pgn=await lichessRes.text();
     if(!pgn.trim()) throw new Error('Lichess returned an empty study. Download the PGN and choose the file here.');
-    d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn})});
+    status.textContent='Parsing and saving the complete Lichess study tree…';
+    d=await api('/api/study-import',{method:'POST',body:JSON.stringify({url,pgn,title:titleOverride})});
    }
   }
-  const imported=Array.isArray(d?.studies)&&d.studies.length?d.studies:[{title:d?.title||('Imported Lichess Study '+(d?.studyId||'')),description:d?.description||'',chapters:d?.chapters||[]}];
-  if(!imported.length)throw new Error('No studies were found in the PGN.');
-  const payload=imported.map((s,i)=>({
-    title:titleOverride&&imported.length===1?titleOverride:(s.title||'Imported Lichess Study '+(i+1)),
-    description:'Imported from Lichess: '+(url||file?.name||'PGN file'),
-    visibility:'assigned',
-    studentIds:[],
-    chapters:s.chapters||[]
-  }));
-  status.textContent='Saving '+payload.length+' stud'+(payload.length===1?'y':'ies')+' to Redis…';
-  const created=await api('/api/studies',{method:'POST',body:JSON.stringify({studies:payload})});
-  const count=created.studies?.length||0;
-  const chapters=payload.reduce((n,s)=>n+s.chapters.length,0);
-  const empty=payload.reduce((n,s)=>n+s.chapters.filter(c=>!(c.moves||[]).length).length,0);
-  status.textContent='Imported '+count+' studies · '+chapters+' chapters'+(empty?' · '+empty+' chapters have no moves in the supplied PGN':'')+'.';
+  const count=d.studyCount||d.studies?.length||0;
+  const chapters=d.chapterCount||0;
+  const empty=d.emptyChapterCount||0;
+  status.textContent='Imported '+count+' stud'+(count===1?'y':'ies')+' · '+chapters+' chapters'+(empty?' · '+empty+' chapters have no moves in the supplied PGN':'')+'.';
   document.getElementById('lichessImportForm').reset();
   await loadStudies();
-  if(count===1&&created.studies?.[0]?.id) window.setTimeout(()=>{location.href='/study.html?id='+encodeURIComponent(created.studies[0].id)},250);
+  if(count===1&&d.studies?.[0]?.id) window.setTimeout(()=>{location.href='/study.html?id='+encodeURIComponent(d.studies[0].id)},250);
  }catch(err){
   status.textContent=err.message;
  }
