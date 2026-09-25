@@ -108,7 +108,47 @@ const params=new URLSearchParams(location.search);let studyId=params.get('id')||
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function chapter(){return study?.chapters?.[currentChapter]}
 function normalizeStudy(){for(const ch of (study?.chapters||[])){ch.moves=Array.isArray(ch.moves)?ch.moves:[];let parent=null;for(const m of ch.moves){m.id=m.id||crypto.randomUUID();m.parentId=m.parentId||parent;parent=m.id}ch.shapesByPly=ch.shapesByPly&&typeof ch.shapesByPly==='object'?ch.shapesByPly:{}}}
-function startGame(ch){try{return ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess()}catch{return new Chess()}}
+function startGame(ch){
+ try{
+  const candidate=ch.startFen&&ch.startFen!=='start'?new Chess(ch.startFen):new Chess();
+  // Some older imported chapters were stored with an empty-board FEN after a
+  // failed PGN parse. Never render a completely blank position as the study start.
+  if(candidate.board().every(row=>row.every(cell=>!cell)))return new Chess();
+  return candidate;
+ }catch{return new Chess()}
+}
+function recoverEmptyChapterMoves(ch){
+ if(!ch||Array.isArray(ch.moves)&&ch.moves.length||!ch.pgn)return false;
+ const source=startGame(ch), moves=[], childrenByParent=new Map(), tokens=String(ch.pgn).replace(/\\[[^\\]]*\\]/g,' ').replace(/\\{[\\s\\S]*?\\}/g,' ').replace(/;[^\\n]*/g,' ');
+ // Remove recursive PGN variations for a safe main-line recovery. The original
+ // PGN remains stored on the chapter; this only repairs chapters whose move tree
+ // was lost by an older importer.
+ let depth=0, main='';
+ for(let i=0;i<tokens.length;i++){
+  const chx=tokens[i];
+  if(chx==='('){depth++;continue}
+  if(chx===')'){depth=Math.max(0,depth-1);continue}
+  if(depth===0)main+=chx;
+ }
+ const words=main.split(/\\s+/).filter(Boolean);
+ let parentId=null;
+ for(let word of words){
+  if(/^\\d+\\.(?:\\.\\.)?$/.test(word)||/^\\.{1,3}$/.test(word)||/^(1-0|0-1|1\\/2-1\\/2|\\*)$/.test(word)||/^\\$\\d+$/.test(word)||/^(?:!!|!\\?|\\?!|\\?\\?|!|\\?)$/.test(word))continue;
+  word=word.replace(/(!!|!\\?|\\?!|\\?\\?|!|\\?)$/,'');
+  if(!word)continue;
+  try{
+   const made=source.move(word,{strict:false});
+   const node={id:crypto.randomUUID(),parentId,from:made.from,to:made.to,promotion:made.promotion||'q',san:made.san,comment:'',nags:[]};
+   moves.push(node);parentId=node.id;
+  }catch{
+   // Ignore non-move PGN tokens rather than losing the whole chapter.
+  }
+ }
+ if(!moves.length)return false;
+ ch.moves=moves;
+ ch.startFen=source.fen();
+ return true;
+}
 function nodePath(ch,targetId){const by=new Map((ch.moves||[]).map(m=>[m.id,m]));const out=[];let n=targetId?by.get(targetId):null;while(n){out.unshift(n);n=n.parentId?by.get(n.parentId):null}return out}
 function selectedMove(){const ch=chapter();return ch.moves.find(m=>m.id===window.selectedNodeId)||null}
 function exerciseKey(){return activeExerciseKey||window.selectedNodeId||'root'}
@@ -473,7 +513,8 @@ async function load(){try{
    studyId=d.study.id;
    history.replaceState(null,'','/study.html?id='+encodeURIComponent(studyId)+'&chapter=0');
  }
- study=d.study;normalizeStudy();students=d.students||[];
+ study=d.study;normalizeStudy();let repaired=false;for(const ch of (study.chapters||[]))if(recoverEmptyChapterMoves(ch))repaired=true;students=d.students||[];
+ if(repaired&&isAdmin){try{const saved=await api('/api/studies',{method:'PUT',body:JSON.stringify(study)});study=saved.study;normalizeStudy();setStatus('Recovered missing chapter moves from the stored PGN','success')}catch(e){console.warn('Could not save recovered chapter moves',e)}}
  $('loading').classList.add('hidden');$('app').classList.remove('hidden');document.body.classList.toggle('studentMode',!isAdmin);$('roleText').textContent=isAdmin?'Admin study editor':'Shared study · read only';$('studyTitle').textContent=study.title;$('studyDescription').textContent=study.description||'';$('shareUrl').value=location.href+'&chapter='+currentChapter;$('viewerNotice').classList.add('hidden');renderChapters();renderStudents();setupBoard();
  }catch(e){$('loading').textContent=e.message}}
 $('firstMove').onclick=jumpFirst;
