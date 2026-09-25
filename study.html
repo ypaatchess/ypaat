@@ -118,8 +118,11 @@ function startGame(ch){
  }catch{return new Chess()}
 }
 function recoverEmptyChapterMoves(ch){
- if(!ch||Array.isArray(ch.moves)&&ch.moves.length||!ch.pgn)return false;
- const source=startGame(ch), moves=[], childrenByParent=new Map(), tokens=String(ch.pgn).replace(/\\[[^\\]]*\\]/g,' ').replace(/\\{[\\s\\S]*?\\}/g,' ').replace(/;[^\\n]*/g,' ');
+ if(!ch||((Array.isArray(ch.moves))&&ch.moves.length)||!ch.pgn)return false;
+ const source=startGame(ch), moves=[], tokens=String(ch.pgn)
+  .replace(/\[[^\]]*\]/g,' ')
+  .replace(/\{[\s\S]*?\}/g,' ')
+  .replace(/;[^\n]*/g,' ');
  // Remove recursive PGN variations for a safe main-line recovery. The original
  // PGN remains stored on the chapter; this only repairs chapters whose move tree
  // was lost by an older importer.
@@ -130,11 +133,11 @@ function recoverEmptyChapterMoves(ch){
   if(chx===')'){depth=Math.max(0,depth-1);continue}
   if(depth===0)main+=chx;
  }
- const words=main.split(/\\s+/).filter(Boolean);
+ const words=main.split(/\s+/).filter(Boolean);
  let parentId=null;
  for(let word of words){
-  if(/^\\d+\\.(?:\\.\\.)?$/.test(word)||/^\\.{1,3}$/.test(word)||/^(1-0|0-1|1\\/2-1\\/2|\\*)$/.test(word)||/^\\$\\d+$/.test(word)||/^(?:!!|!\\?|\\?!|\\?\\?|!|\\?)$/.test(word))continue;
-  word=word.replace(/(!!|!\\?|\\?!|\\?\\?|!|\\?)$/,'');
+  if(/^\d+\.(?:\.\.)?$/.test(word)||/^\.{1,3}$/.test(word)||/^(1-0|0-1|1\/2-1\/2|\*)$/.test(word)||/^\$\d+$/.test(word)||/^(?:!!|!\?|\?!|\?\?|!|\?)$/.test(word))continue;
+  word=word.replace(/(!!|!\?|\?!|\?\?|!|\?)$/,'');
   if(!word)continue;
   try{
    const made=source.move(word,{strict:false});
