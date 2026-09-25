@@ -143,7 +143,7 @@ function renderStudentExercises(){
  list.innerHTML=items.map(([key,ex],i)=>{
   const start=key==='root'?null:key;
   const move=start?(ch.moves||[]).find(m=>m.id===start):null;
-  const label=start?(move?.san||'Position after selected move'):'Start of chapter';
+  const label=start?'Continue from a coach-selected position':'Start of chapter';
   return '<button class="btn light" style="width:100%;text-align:left;margin-top:7px" data-exercise-start="'+esc(key)+'">Exercise '+(i+1)+' · '+esc(label)+'</button>';
  }).join('');
  list.querySelectorAll('[data-exercise-start]').forEach(btn=>btn.onclick=()=>{
@@ -202,6 +202,12 @@ function moveLabel(m,depth){
  return prefix+' '+(m.san||'')+nags+note;
 }
 function renderMoves(){
+ if(!isAdmin&&exercise()){
+  $('moves').innerHTML='<span class="muted">Exercise mode — find the move on the board.</span>';
+  $('moveComment').value='';
+  $('moveAnnotation').style.display='none';
+  return;
+ }
  const ch=chapter(),children=new Map();
  for(const m of (ch.moves||[])){const p=m.parentId||null;if(!children.has(p))children.set(p,[]);children.get(p).push(m)}
  let html='';
