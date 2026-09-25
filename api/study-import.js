@@ -40,20 +40,20 @@ function splitGames(pgn){
 function tags(pgn){
   const out={};
   const re=/^\s*\[([A-Za-z][A-Za-z0-9_]*)\s+"((?:\\.|[^"])*)"\]\s*$/gm;let m;
-  while((m=re.exec(pgn)))out[m[1]]=m[2].replace(/\\(["\\])/g,'$1');
+  while((m=re.exec(pgn)))out[m[1]]=m[2].replace(/\\"/g,'"').replace(/\\\\/g,'\\');
   return out;
 }
 function tag(pgn,name){return tags(pgn)[name]||''}
 function stripHeaders(game){
-  return String(game||'').replace(/^(?:\\s*\\[[^\\n]*\\]\\s*)+/,'').trim();
+  return String(game||'').replace(/^(?:\s*\[[^\n]*\]\s*)+/,'').trim();
 }
 function tokenizeMovetext(game){
-  const text=stripHeaders(game).replace(/\\r\\n/g,'\\n');
+  const text=stripHeaders(game).replace(/\r\n/g,'\n');
   const tokens=[];
   let i=0;
   while(i<text.length){
     const ch=text[i];
-    if(/\\s/.test(ch)){i++;continue}
+    if(/\s/.test(ch)){i++;continue}
     if(ch==='('||ch===')'){tokens.push({type:ch});i++;continue}
     if(ch==='{'){
       let j=i+1,depth=1;
@@ -66,21 +66,21 @@ function tokenizeMovetext(game){
       i=j;continue;
     }
     if(ch===';'){
-      const j=text.indexOf('\\n',i);
+      const j=text.indexOf('\n',i);
       tokens.push({type:'comment',value:text.slice(i+1,j<0?text.length:j).trim()});
       i=j<0?text.length:j;continue;
     }
     let j=i+1;
-    while(j<text.length&&!/[\\s(){};]/.test(text[j]))j++;
+    while(j<text.length&&!/[\s(){};]/.test(text[j]))j++;
     tokens.push({type:'word',value:text.slice(i,j)});
     i=j;
   }
   return tokens;
 }
 function isMoveNumber(token){
-  return /^\\d+\\.(?:\\.\\.)?$/.test(token)||/^\\d+\\.\\.\\.$/.test(token);
+  return /^\d+\.(?:\.\.)?$/.test(token)||/^\d+\.\.\.$/.test(token);
 }
-function isResult(token){return /^(1-0|0-1|1\\/2-1\\/2|\\*)$/.test(token)}
+function isResult(token){return /^(1-0|0-1|1\/2-1\/2|\*)$/.test(token)}
 function parseStructuredPgn(game,startFen){
   const chess=startFen!=='start'?new Chess(startFen):new Chess();
   const tokens=tokenizeMovetext(game);
@@ -96,8 +96,8 @@ function parseStructuredPgn(game,startFen){
   function addComment(value){
     if(!value)return;
     const node=currentId?byId.get(currentId):null;
-    if(node)node.comment=node.comment?node.comment+'\\n'+value:value;
-    else chapterNote=chapterNote?chapterNote+'\\n'+value:value;
+    if(node)node.comment=node.comment?node.comment+'\n'+value:value;
+    else chapterNote=chapterNote?chapterNote+'\n'+value:value;
   }
   function addNag(value){
     if(!value)return;
@@ -110,13 +110,13 @@ function parseStructuredPgn(game,startFen){
     if(token.type==='comment'){addComment(token.value);continue}
     if(token.type==='('){
       if(currentId){
-        const current=byId.get(currentId);
         stack.push({resumeFen:chess.fen(),resumeId:currentId});
         chess.load(currentBeforeFen);
-        currentId=current.parentId||null;
+        const current=byId.get(currentId);
+        currentId=current?.parentId||null;
         currentBeforeFen=chess.fen();
       }else{
-        stack.push({fen:chess.fen(),parentId:null});
+        stack.push({resumeFen:chess.fen(),resumeId:null});
       }
       continue;
     }
@@ -130,16 +130,27 @@ function parseStructuredPgn(game,startFen){
       continue;
     }
 
-    const word=token.value;
-    if(isMoveNumber(word)||/^\\.+$/.test(word))continue;
+    let word=token.value;
+    if(isMoveNumber(word)||/^\.{1,3}$/.test(word))continue;
     if(isResult(word))continue;
-    if(/^\\$\\d+$/.test(word)){addNag(word);continue}
-    if(/^(?:!!|!\\?|\\?!|\\?\\?|!|\\?)$/.test(word)){addNag(word);continue}
 
+    const attachedNags=word.match(/^(.*?)(!!|!\?|\?!|\?\?|!|\?)$/);
+    if(attachedNags&&attachedNags[1]){
+      word=attachedNags[1];
+      addNag(attachedNags[2]);
+    }else if(/^\$\d+$/.test(word)){
+      addNag(word);
+      continue;
+    }else if(/^(?:!!|!\?|\?!|\?\?|!|\?)$/.test(word)){
+      addNag(word);
+      continue;
+    }
+
+    if(!word)continue;
     const beforeFen=chess.fen();
     let made;
     try{
-      made=chess.move(word,{sloppy:true});
+      made=chess.move(word,{strict:false});
     }catch(e){
       throw new Error('Could not parse move "'+word+'"');
     }
@@ -241,7 +252,6 @@ async function saveImportedStudies(parsed,titleOverride,sourceLabel){
   await redis.set(STUDIES_KEY,JSON.stringify(existing));
   return created;
 }
-
 function parsePgn(pgn,sourceId){
   const games=splitGames(pgn);
   const chapters=games.map(parseChapter);
@@ -268,6 +278,14 @@ function parsePgn(pgn,sourceId){
     studies
   };
 }
+function batchSummary(studies){
+  const list=Array.isArray(studies)?studies:[];
+  return {
+    studyCount:list.length,
+    chapterCount:list.reduce((n,s)=>n+(s.chapters||[]).length,0),
+    emptyChapterCount:list.reduce((n,s)=>n+(s.chapters||[]).filter(ch=>!(ch.moves||[]).length).length,0)
+  };
+}
 module.exports=async function(req,res){
   try{
     const admin=await adminFromRequest(req);
@@ -277,25 +295,38 @@ module.exports=async function(req,res){
     const suppliedPgn=clean(raw.pgn);
     const batchId=clean(raw.batchId);
     const batchKey=batchId&&/^[A-Za-z0-9_-]{8,120}$/.test(batchId)?IMPORT_BATCH_PREFIX+batchId:null;
+
     if(suppliedPgn){
-      let importPgn=suppliedPgn;
+      const sourceParsed=parseLichessStudyUrl(clean(raw.url));
+      const sourceId=sourceParsed?.studyId||'lichess';
+      const parsedChunk=parsePgn(suppliedPgn,sourceId);
+      const redis=await getRedis();
+      let batchStudies=[];
       if(batchKey){
-        const previous=String((await (await getRedis()).get(batchKey))||'');
-        importPgn=previous+suppliedPgn;
-        const redis=await getRedis();
+        const previous=String((await redis.get(batchKey))||'');
+        if(previous){
+          try{
+            const saved=JSON.parse(previous);
+            if(Array.isArray(saved))batchStudies=saved;
+          }catch{}
+        }
+        batchStudies.push(...(parsedChunk.studies||[]));
         if(raw.final!==true){
-          await redis.set(batchKey,importPgn,{EX:3600});
-          return ok(res,202,{ok:true,complete:false});
+          await redis.set(batchKey,JSON.stringify(batchStudies),{EX:3600});
+          const summary=batchSummary(batchStudies);
+          return ok(res,202,{ok:true,complete:false,...summary});
         }
         await redis.del(batchKey);
+      }else{
+        batchStudies=parsedChunk.studies||[];
       }
-      const parsed=parseLichessStudyUrl(clean(raw.url));
-      const result=parsePgn(importPgn,parsed?.studyId||'lichess');
-      const created=await saveImportedStudies(result,clean(raw.title),clean(raw.url)||'PGN file');
-      const chapters=created.reduce((n,s)=>n+(s.chapters||[]).length,0);
-      const empty=created.reduce((n,s)=>n+(s.chapters||[]).filter(ch=>!(ch.moves||[]).length).length,0);
-      return ok(res,201,{ok:true,studies:created.map(s=>({id:s.id,title:s.title,chapterCount:s.chapters.length})),studyCount:created.length,chapterCount:chapters,emptyChapterCount:empty});
+
+      const finalParsed={studies:batchStudies};
+      const created=await saveImportedStudies(finalParsed,clean(raw.title),clean(raw.url)||'PGN file');
+      const summary=batchSummary(created);
+      return ok(res,201,{ok:true,...summary,studies:created.map(s=>({id:s.id,title:s.title,chapterCount:s.chapters.length}))});
     }
+
     const url=clean(raw.url);
     const parsed=parseLichessStudyUrl(url);
     if(!parsed)return ok(res,400,{error:'Enter a valid public Lichess study URL such as https://lichess.org/study/xxxxxxxx'});
@@ -315,11 +346,10 @@ module.exports=async function(req,res){
     if(!pgn.trim())return ok(res,400,{error:'Lichess returned an empty study/chapter.'});
     const result=parsePgn(pgn,parsed.studyId);
     const created=await saveImportedStudies(result,clean(raw.title),url);
-    const chapters=created.reduce((n,s)=>n+(s.chapters||[]).length,0);
-    const empty=created.reduce((n,s)=>n+(s.chapters||[]).filter(ch=>!(ch.moves||[]).length).length,0);
-    return ok(res,201,{ok:true,studies:created.map(s=>({id:s.id,title:s.title,chapterCount:s.chapters.length})),studyCount:created.length,chapterCount:chapters,emptyChapterCount:empty});
+    const summary=batchSummary(created);
+    return ok(res,201,{ok:true,...summary,studies:created.map(s=>({id:s.id,title:s.title,chapterCount:s.chapters.length}))});
   }catch(e){
-    console.error(e);
+    console.error('Study import error:',e);
     return res.status(500).json({error:e?.message||'Lichess study import failed'});
   }
 };
