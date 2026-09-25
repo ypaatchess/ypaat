@@ -88,7 +88,11 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </form><div id="homeworkError" class="error"></div>
 </div>
 <div id="studiesTab" class="card hidden">
-<div class="top"><div><h2>Studies</h2><p class="muted">Create Lichess-style chess studies, chapters and student sharing.</p></div><button class="btn" id="newStudyBtn">+ New Study</button></div>
+<div class="top"><div><h2>Studies <span id="studyCount" class="pill">0</span></h2><p class="muted">Create Lichess-style chess studies, chapters and student sharing.</p></div><div class="actions"><button class="btn light" id="deleteSelectedStudies" disabled>Delete selected</button><button class="btn" id="newStudyBtn">+ New Study</button></div></div>
+<div class="card" style="padding:10px 14px;margin:0 0 14px;background:#faf9f5;display:flex;align-items:center;justify-content:space-between;gap:12px">
+<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:700"><input id="selectAllStudies" type="checkbox"> Select all studies</label>
+<span id="studySelectionCount" class="muted">0 selected</span>
+</div>
 <div class="card" style="padding:16px;margin:14px 0 18px;background:#faf9f5">
 <h3 style="margin-top:0">Import from Lichess</h3>
 <p class="muted">Import a public Lichess Study into YPAAT, including its chapters and main line moves. The imported copy is stored in YPAAT Redis and can then be shared with students.</p>
@@ -280,13 +284,37 @@ document.getElementById('homeworkForm').addEventListener('submit',async e=>{
 async function loadStudies(){
  try{
   const d=await api('/api/studies');
+  const list=d.studies||[];
   const byId=Object.fromEntries((d.students||[]).map(s=>[s.id,s.name]));
-  document.getElementById('studiesList').innerHTML=(d.studies||[]).map(s=>'<div class="item"><div><b>'+esc(s.title)+'</b><div class="studentMeta">'+esc(s.description||'')+' · '+(s.chapters||[]).length+' chapters · '+(s.visibility==='public'?'Public':'Assigned')+'</div><div>'+(s.studentIds||[]).map(id=>'<span class="pill">'+esc(byId[id]||'Student')+'</span>').join('')+'</div></div><div class="actions"><a class="btn light" href="/study.html?id='+encodeURIComponent(s.id)+'">Open</a><button class="btn danger" onclick="deleteStudyAdmin(\''+escAttr(s.id)+'\')">Delete</button></div></div>').join('')||'<p class="muted">No studies yet.</p>';
-  const sf=document.getElementById('attemptStudyFilter');sf.innerHTML='<option value="">All studies</option>'+(d.studies||[]).map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.title)+'</option>').join('');
+  document.getElementById('studyCount').textContent=list.length;
+  document.getElementById('studiesList').innerHTML=list.map(s=>'<div class="item"><div style="display:flex;gap:12px;align-items:flex-start"><input class="studySelect" type="checkbox" value="'+escAttr(s.id)+'" aria-label="Select '+escAttr(s.title)+'"><div><b>'+esc(s.title)+'</b><div class="studentMeta">'+esc(s.description||'')+' · '+(s.chapters||[]).length+' chapters · '+(s.visibility==='public'?'Public':'Assigned')+'</div><div>'+(s.studentIds||[]).map(id=>'<span class="pill">'+esc(byId[id]||'Student')+'</span>').join('')+'</div></div></div><div class="actions"><a class="btn light" href="/study.html?id='+encodeURIComponent(s.id)+'">Open</a><button class="btn danger" onclick="deleteStudyAdmin(\''+escAttr(s.id)+'\')">Delete</button></div></div>').join('')||'<p class="muted">No studies yet.</p>';
+  document.querySelectorAll('.studySelect').forEach(x=>x.addEventListener('change',updateStudySelection));
+  document.getElementById('selectAllStudies').checked=false;
+  updateStudySelection();
+  const sf=document.getElementById('attemptStudyFilter');sf.innerHTML='<option value="">All studies</option>'+list.map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.title)+'</option>').join('');
   const st=document.getElementById('attemptStudentFilter');st.innerHTML='<option value="">All students</option>'+(d.students||[]).map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.name)+'</option>').join('');
   await loadAttempts();
  }catch(e){document.getElementById('studiesList').textContent=e.message}
 }
+function selectedStudyIds(){return [...document.querySelectorAll('.studySelect:checked')].map(x=>x.value)}
+function updateStudySelection(){
+ const boxes=[...document.querySelectorAll('.studySelect')],ids=selectedStudyIds(),all=$('selectAllStudies');
+ $('studySelectionCount').textContent=ids.length+' selected';
+ $('deleteSelectedStudies').disabled=!ids.length;
+ all.checked=!!boxes.length&&ids.length===boxes.length;
+ all.indeterminate=ids.length>0&&ids.length<boxes.length;
+}
+async function deleteSelectedStudies(){
+ const ids=selectedStudyIds();
+ if(!ids.length)return;
+ if(!confirm('Delete '+ids.length+' selected stud'+(ids.length===1?'y':'ies')+' permanently?'))return;
+ try{
+   const d=await api('/api/studies',{method:'DELETE',body:JSON.stringify({ids})});
+   await loadStudies();
+   $('lichessImportStatus').textContent='Deleted '+(d.deleted||ids.length)+' stud'+((d.deleted||ids.length)===1?'y':'ies')+'.';
+ }catch(e){alert(e.message)}
+}
+
 async function recoverSmallImport(d,status){
  const studies=Array.isArray(d?.studies)?d.studies:[];
  const total=studies.reduce((n,s)=>n+(s.chapters||[]).length,0);
@@ -393,6 +421,8 @@ async function loadAttempts(){
  }catch(e){document.getElementById('attemptsList').textContent=e.message}
 }
 async function deleteStudyAdmin(id){if(!confirm('Delete this study?'))return;try{await api('/api/studies',{method:'DELETE',body:JSON.stringify({id})});await loadStudies()}catch(e){alert(e.message)}}
+document.getElementById('selectAllStudies').addEventListener('change',e=>{document.querySelectorAll('.studySelect').forEach(x=>x.checked=e.target.checked);updateStudySelection()});
+document.getElementById('deleteSelectedStudies').addEventListener('click',deleteSelectedStudies);
 async function loadPages(){try{const d=await api('/api/pages');document.getElementById('pages').innerHTML=(d.pages||[]).map(p=>'<div class="item"><div><b>'+esc(p.title)+'</b><br><small>#'+esc(p.slug)+' · '+esc(p.status)+'</small></div><div class="actions"><button class="btn light" onclick="editPage(\''+escAttr(p.id||'')+'\')">Edit</button><button class="btn danger" onclick="deletePage(\''+escAttr(p.id||'')+'\')">Delete</button></div></div>').join('')||'<p class="muted">No articles yet.</p>'}catch(e){document.getElementById('pages').textContent=e.message}}
 function openPageForm(p){const card=document.getElementById('pageFormCard'),f=document.getElementById('pageForm');card.classList.remove('hidden');f.reset();editingPageId=p?.id||'';document.getElementById('formTitle').textContent=p?'Edit Article':'Create New Article';if(p){for(const k of ['title','slug','description','content','status','nav'])f.elements[k].value=p[k]||''}document.getElementById('pageError').textContent='';window.scrollTo({top:card.offsetTop-20,behavior:'smooth'})}
 function closePageForm(){document.getElementById('pageFormCard').classList.add('hidden');editingPageId='';document.getElementById('pageForm').reset()}
