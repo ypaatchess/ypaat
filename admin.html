@@ -22,7 +22,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 
 <section id="dashboard" class="hidden">
 <div class="top"><div><div class="eyebrow">YPAAT Management</div><h1>Dashboard</h1></div><button id="logout" class="btn">Sign out</button></div>
-<div class="tabs"><button class="btn active" data-tab="students">Students</button><button class="btn" data-tab="classes">Classes</button><button class="btn" data-tab="homework">Homework</button><button class="btn" data-tab="studies">Studies</button><button class="btn" data-tab="attempts">Exercise Attempts</button><button class="btn" data-tab="pages">Articles</button></div>
+<div class="tabs"><button class="btn active" data-tab="students">Students</button><button class="btn" data-tab="classes">Classes</button><button class="btn" data-tab="studies">Studies</button><button class="btn" data-tab="attempts">Exercise Attempts</button><button class="btn" data-tab="pages">Articles</button></div>
 
 <div id="studentsTab" class="card">
 <div class="top"><div><h2>Students</h2><p class="muted">Create student accounts and assign one or more training levels.</p></div><button class="btn" id="newStudentBtn">+ New Student</button></div>
@@ -74,19 +74,6 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 <button class="btn" type="submit">Save Class</button>
 </form><div id="classError" class="error"></div>
 </div>
-<div id="homeworkTab" class="card hidden">
-<div class="top"><div><h2>Homework</h2><p class="muted">Create chess homework and assign it to one or more students.</p></div><button class="btn" id="newHomeworkBtn">+ New Homework</button></div>
-<div id="homeworkList"></div>
-</div>
-<div id="homeworkFormCard" class="card hidden" style="margin-top:18px">
-<div class="top"><div><h2 id="homeworkFormTitle">Create Homework</h2><p class="muted">Students will see assigned homework in their portal.</p></div><button class="btn light" id="cancelHomework">Cancel</button></div>
-<form id="homeworkForm">
-<div><label>Topic name</label><input name="topic" placeholder="e.g. Tactical calculation — forks" required></div>
-<div class="row"><div><label>Date</label><input name="date" type="date" required></div><div><label>Lichess URL</label><input name="lichessUrl" type="url" placeholder="https://lichess.org/..." required></div></div>
-<div><label>Assign to students <span class="muted">(select one or more)</span></label><div id="homeworkStudents" class="multi"></div></div>
-<button class="btn" type="submit">Save Homework</button>
-</form><div id="homeworkError" class="error"></div>
-</div>
 <div id="studiesTab" class="card hidden">
 <div class="top"><div><h2>Studies <span id="studyCount" class="pill">0</span></h2><p class="muted">Create Lichess-style chess studies, chapters and student sharing.</p></div><div class="actions"><button class="btn light" id="deleteSelectedStudies" disabled>Delete selected</button><button class="btn" id="newStudyBtn">+ New Study</button></div></div>
 <div class="card" style="padding:10px 14px;margin:0 0 14px;background:#faf9f5;display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -121,7 +108,7 @@ body{margin:0;background:#f7f4ed;color:#10202a;font-family:Arial,sans-serif}.wra
 </section>
 </div>
 <div id="assignModal" class="modalBackdrop hidden" role="dialog" aria-modal="true" aria-labelledby="assignModalTitle"><div class="modalCard"><div class="modalHead"><div><h2 id="assignModalTitle" style="margin:0">Assign students</h2><div id="assignModalStudy" class="muted" style="margin-top:4px"></div></div><button class="btn light" id="closeAssignModal" type="button">Close</button></div><div class="modalBody"><input id="assignStudentSearch" class="search" placeholder="Search students by name, email or mobile" autocomplete="off"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0"><span id="assignSelectionCount" class="muted">0 selected</span><button class="btn light" id="assignSelectVisible" type="button">Select visible</button></div><div id="assignStudentList" class="studentPickerList"></div><div style="margin-top:18px;padding-top:16px;border-top:1px solid #e7e1d6"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>Chapter access</b><div class="muted" style="font-size:12px;margin-top:3px">Apply this chapter selection to all selected students.</div></div><div class="actions"><button class="btn light" id="assignAllChapters" type="button">Select all</button><button class="btn light" id="assignNoChapters" type="button">Clear all</button></div></div><div id="assignChapterList" class="studentPickerList"></div><div id="assignChapterStatus" class="muted" style="margin-top:7px"></div></div></div><div class="modalFoot"><span id="assignStatus" class="muted"></span><div class="actions"><button class="btn light" id="cancelAssign" type="button">Cancel</button><button class="btn" id="saveAssign" type="button">Save assignment</button></div></div></div></div><div id="studentStudiesModal" class="modalBackdrop hidden" role="dialog" aria-modal="true" aria-labelledby="studentStudiesTitle"><div class="modalCard"><div class="modalHead"><div><h2 id="studentStudiesTitle" style="margin:0">Assigned studies</h2><div id="studentStudiesMeta" class="muted" style="margin-top:4px"></div></div><button class="btn light" id="closeStudentStudies" type="button">Close</button></div><div class="modalBody"><div id="studentStudiesList"></div></div><div class="modalFoot"><span id="studentStudiesStatus" class="muted"></span><button class="btn light" id="cancelStudentStudies" type="button">Close</button></div></div></div><script>
-let students=[],studies=[],homework=[],classes=[],allClasses=[],editingStudentId='',editingPageId='',editingHomeworkId='',editingClassId='';
+let students=[],studies=[],classes=[],allClasses=[],editingStudentId='',editingPageId='',editingClassId='';
 async function api(path,options={}){
  const res=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  let data={};let raw='';
@@ -130,8 +117,8 @@ async function api(path,options={}){
  return data;
 }
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadHomework();loadClasses();loadStudies();loadPages()}
-function showTab(tab){document.getElementById('studentsTab').classList.toggle('hidden',tab!=='students');document.getElementById('classesTab').classList.toggle('hidden',tab!=='classes');document.getElementById('homeworkTab').classList.toggle('hidden',tab!=='homework');document.getElementById('studiesTab').classList.toggle('hidden',tab!=='studies');document.getElementById('attemptsTab').classList.toggle('hidden',tab!=='attempts');document.getElementById('pagesTab').classList.toggle('hidden',tab!=='pages');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab!=='students')closeStudentForm();if(tab!=='classes')closeClassForm();if(tab!=='homework')closeHomeworkForm();if(tab!=='pages')closePageForm();if(tab==='studies')loadStudies();if(tab==='attempts'){loadStudies();loadAttempts()}}
+function showDashboard(){document.getElementById('login').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');loadStudents();loadClasses();loadStudies();loadPages()}
+function showTab(tab){document.getElementById('studentsTab').classList.toggle('hidden',tab!=='students');document.getElementById('classesTab').classList.toggle('hidden',tab!=='classes');document.getElementById('studiesTab').classList.toggle('hidden',tab!=='studies');document.getElementById('attemptsTab').classList.toggle('hidden',tab!=='attempts');document.getElementById('pagesTab').classList.toggle('hidden',tab!=='pages');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab!=='students')closeStudentForm();if(tab!=='classes')closeClassForm();if(tab!=='pages')closePageForm();if(tab==='studies')loadStudies();if(tab==='attempts'){loadStudies();loadAttempts()}}
 async function checkLogin(){try{const d=await api('/api/auth/me');if(d.user)showDashboard()}catch{}}
 async function loadStudents(){try{const d=await api('/api/students');students=d.students||[];renderStudents()}catch(e){document.getElementById('students').textContent=e.message}}
 function renderStudents(){
@@ -251,36 +238,6 @@ document.getElementById('classForm').addEventListener('submit',async e=>{
  }
 });
 
-async function loadHomework(){
- try{const d=await api('/api/homework');homework=d.homework||[];students=d.students||students;renderHomework();renderHomeworkStudents()}
- catch(e){document.getElementById('homeworkList').textContent=e.message}
-}
-function renderHomework(){
- const byId=Object.fromEntries(students.map(s=>[s.id,s]));
- document.getElementById('homeworkList').innerHTML=homework.map(h=>{
-  const names=(h.studentIds||[]).map(id=>byId[id]?.name||'Unknown student').join(', ');
-  return '<div class="item"><div><b>'+esc(h.topic)+'</b><div class="studentMeta">'+esc(h.date)+' · '+esc(names)+'</div><div><a href="'+escAttr(h.lichessUrl)+'" target="_blank" rel="noopener">Open Lichess ↗</a></div></div><div class="actions"><button class="btn light" onclick="editHomework(\''+escAttr(h.id)+'\')">Edit</button><button class="btn danger" onclick="deleteHomework(\''+escAttr(h.id)+'\')">Delete</button></div></div>'
- }).join('')||'<p class="muted">No homework created yet.</p>';
-}
-function renderHomeworkStudents(selected=[]){
- document.getElementById('homeworkStudents').innerHTML=students.map(s=>'<label class="level"><input type="checkbox" name="studentIds" value="'+escAttr(s.id)+'" '+(selected.includes(s.id)?'checked':'')+'><span>'+esc(s.name)+'</span></label>').join('')||'<p class="muted">Create students first.</p>';
-}
-function openHomeworkForm(h){
- const card=document.getElementById('homeworkFormCard'),f=document.getElementById('homeworkForm');card.classList.remove('hidden');f.reset();editingHomeworkId=h?.id||'';
- document.getElementById('homeworkFormTitle').textContent=h?'Edit Homework':'Create Homework';
- if(h){f.elements.topic.value=h.topic||'';f.elements.date.value=h.date||'';f.elements.lichessUrl.value=h.lichessUrl||''}
- renderHomeworkStudents(h?.studentIds||[]);
- document.getElementById('homeworkError').textContent='';window.scrollTo({top:card.offsetTop-20,behavior:'smooth'});
-}
-function closeHomeworkForm(){document.getElementById('homeworkFormCard').classList.add('hidden');editingHomeworkId='';document.getElementById('homeworkForm').reset()}
-function editHomework(id){const h=homework.find(x=>x.id===id);if(h)openHomeworkForm(h)}
-async function deleteHomework(id){const h=homework.find(x=>x.id===id);if(!h||!confirm('Delete this homework?'))return;try{await api('/api/homework',{method:'DELETE',body:JSON.stringify({id})});await loadHomework()}catch(e){alert(e.message)}}
-document.getElementById('newHomeworkBtn').addEventListener('click',()=>openHomeworkForm());
-document.getElementById('cancelHomework').addEventListener('click',closeHomeworkForm);
-document.getElementById('homeworkForm').addEventListener('submit',async e=>{
- e.preventDefault();const f=e.currentTarget;const studentIds=[...f.querySelectorAll('input[name=studentIds]:checked')].map(x=>x.value);const data={topic:f.elements.topic.value,date:f.elements.date.value,lichessUrl:f.elements.lichessUrl.value,studentIds};
- try{await api('/api/homework',{method:editingHomeworkId?'PUT':'POST',body:JSON.stringify({...data,id:editingHomeworkId||undefined})});closeHomeworkForm();await loadHomework()}catch(x){document.getElementById('homeworkError').textContent=x.message}
-});
 async function loadStudies(){
  try{
   const d=await api('/api/studies');
